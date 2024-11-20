@@ -12,7 +12,8 @@ from Utils.Utils import indent
 #tree2 = ET.parse(r"C:\Users\pol.monteso\OneDrive - Inprocess Technology and consulting group, S.L\Desktop\Projectes\PRO-074~EDF\main.xaml")
 
 
-def start_emulation(alarm_dir, directorio):
+def start_emulation(alarm_dir, directorio, tuning_params, database_path, filter_string):
+    filter_list = filter_string.split(":")
     project = ET.Element("Project")
     project_type = ET.SubElement(project, "ProjectType", Value="0")
     project_version = ET.SubElement(project, "ProjectVersion", Value="3.6.4.0 [master-57b7df6f]")
@@ -57,10 +58,10 @@ def start_emulation(alarm_dir, directorio):
     i = 1
     tagName_list = []
     alarm_dict = {}
-    units = generate_units_json()
+    units = load_units(database_path)
 
-    xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
-    xlsx_data = generate_excel_data(xlsx_directory)
+    #xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
+    xlsx_data = generate_csv_data(tuning_params)
     # units = {key: {**units[key], **xlsx_data[key]} for key in units if key in xlsx_data}
     units = {key: {**units[key], **xlsx_data.get(key, {})} for key in units}
     tuples = []
@@ -69,23 +70,41 @@ def start_emulation(alarm_dir, directorio):
     button_list = []
     print("llegint propietats de les alarmes:")
     #alarmsPriority_dict = leer_y_modificar_excel(r'C:\Emulation\HMIscreensYOKOGAWA\Source\CAMSAlm-CENTUM.xlsx')
-    alarmsPriority_dict = leer_y_modificar_excel(alarm_dir)
+    alarmsPriority_dict = leer_y_modificar_csv(alarm_dir)
     for archivo in os.listdir(directorio):
-        if (archivo.startswith('PRO-001')) and archivo.endswith('.xaml'):
-            point = archivo.find('.')
-            ruta_archivo = os.path.join(directorio, archivo)
+        if filter_list and "Ex" not in filter_list[0]:
+            if (archivo.startswith(tuple(filter_list))) and archivo.endswith('.xaml'):
+                point = archivo.find('.')
+                ruta_archivo = os.path.join(directorio, archivo)
 
-            # Cargar el archivo XML específico
-            tree1 = ET.parse(ruta_archivo)
-            root1 = tree1.getroot()
-            print("Carregant la pantalla " + archivo + " número  " + str(
-                i) + "-----------------------------------------------------------------------------------------------")
-            tuples, window_dict, touch_list = initScreen(root1, project, windows, project_tree, tags, archivo[:point],
-                                                         tagName_list, units, tuples, alarms, alarm_dict, window_dict,
-                                                         touch_list, alarmsPriority_dict, button_list)
-            print("Done " + str(archivo) + " número  " + str(
-                i) + "-----------------------------------------------------------------------------------------------")
-            i = i + 1
+                # Cargar el archivo XML específico
+                tree1 = ET.parse(ruta_archivo)
+                root1 = tree1.getroot()
+                print("Carregant la pantalla " + archivo + " número  " + str(
+                    i) + "-----------------------------------------------------------------------------------------------")
+                tuples, window_dict, touch_list = initScreen(root1, project, windows, project_tree, tags, archivo[:point],
+                                                             tagName_list, units, tuples, alarms, alarm_dict, window_dict,
+                                                             touch_list, alarmsPriority_dict, button_list)
+                print("Done " + str(archivo) + " número  " + str(
+                    i) + "-----------------------------------------------------------------------------------------------")
+                i = i + 1
+        else:
+            if archivo.endswith('.xaml'):
+                point = archivo.find('.')
+                ruta_archivo = os.path.join(directorio, archivo)
+
+                # Cargar el archivo XML específico
+                tree1 = ET.parse(ruta_archivo)
+                root1 = tree1.getroot()
+                print("Carregant la pantalla " + archivo + " número  " + str(
+                    i) + "-----------------------------------------------------------------------------------------------")
+                tuples, window_dict, touch_list = initScreen(root1, project, windows, project_tree, tags, archivo[:point],
+                                                             tagName_list, units, tuples, alarms, alarm_dict, window_dict,
+                                                             touch_list, alarmsPriority_dict, button_list)
+                print("Done " + str(archivo) + " número  " + str(
+                    i) + "-----------------------------------------------------------------------------------------------")
+                i = i + 1
+
     """window_dict = {}
     touch_list = []
     button_list = []
@@ -117,46 +136,29 @@ def start_emulation(alarm_dir, directorio):
                                                TypeFunction="callWindow")
 
     for button in button_list:
-        """if button.FunctionType == "callWindow":"""
-        if button.Screen in window_dict.keys():
-            window_name = window_dict.get(button.Screen)
-            if window_name:  # Verificamos que el nombre de la ventana existe
-                # Encontrar la ventana existente en el XML
-                """window_elem = windows.find(f"Window[@ID='{window_name}']")"""
-                button_elem = ET.SubElement(button.Window, "Button",
-                                            Background=button.Background,
-                                            Foreground=button.Foreground,
-                                            Screen=window_name,
-                                            Height=button.Height,
-                                            Width=button.Width,
-                                            FontFamily=button.FontFamily,
-                                            FontWeight=str(button.FontWeight),
-                                            Text=button.Text,
-                                            RenderTransform=button.RenderTransform,
-                                            FontSize=str(button.FontSize),
-                                            RenderTransformOrigin=button.RenderTransformOrigin,
-                                            ShapeName="",
-                                            TypeFunction=button.FunctionType,
-                                            X=str(button.X),
-                                            Y=str(button.Y))
-        else:
-            """window_elem = windows.find(f"Window[@ID='{window_name}']")"""
-            button_elem = ET.SubElement(button.Window, "Button",
-                                        Background=button.Background,
-                                        Foreground=button.Foreground,
-                                        Screen="",
-                                        Height=button.Height,
-                                        Width=button.Width,
-                                        FontFamily=button.FontFamily,
-                                        FontWeight=str(button.FontWeight),
-                                        Text=button.Text,
-                                        RenderTransform=button.RenderTransform,
-                                        FontSize=str(button.FontSize),
-                                        ShapeName="",
-                                        RenderTransformOrigin=button.RenderTransformOrigin,
-                                        X=str(button.X),
-                                        Y=str(button.Y))
-        """elif button.FunctionType == "instrumentCommand":
+        if button.FunctionType == "callWindow":
+            if button.Screen in window_dict.keys():
+                window_name = window_dict.get(button.Screen)
+                if window_name:  # Verificamos que el nombre de la ventana existe
+                    # Encontrar la ventana existente en el XML
+                    """window_elem = windows.find(f"Window[@ID='{window_name}']")"""
+                    button_elem = ET.SubElement(button.Window, "Button",
+                                                Background=button.Background,
+                                                Foreground=button.Foreground,
+                                                Screen=window_name,
+                                                Height=button.Height,
+                                                Width=button.Width,
+                                                FontFamily=button.FontFamily,
+                                                FontWeight=str(button.FontWeight),
+                                                Text=button.Text,
+                                                RenderTransform=button.RenderTransform,
+                                                FontSize=str(button.FontSize),
+                                                RenderTransformOrigin=button.RenderTransformOrigin,
+                                                ShapeName="",
+                                                TypeFunction=button.FunctionType,
+                                                X=str(button.X),
+                                                Y=str(button.Y))
+        elif button.FunctionType == "instrumentCommand":
             button_elem = ET.SubElement(button.Window, "Button",
                                         Background=button.Background,
                                         Foreground=button.Foreground,
@@ -175,7 +177,24 @@ def start_emulation(alarm_dir, directorio):
                                         Command=str(button.CommandData),
                                         CommandData=str(button.CommandData),
                                         DataTag=str(button.DataTag),
-                                        TypeFunction=str(button.FunctionType))"""
+                                        TypeFunction=str(button.FunctionType))
+        else:
+            """window_elem = windows.find(f"Window[@ID='{window_name}']")"""
+            button_elem = ET.SubElement(button.Window, "Button",
+                                        Background=button.Background,
+                                        Foreground=button.Foreground,
+                                        Screen="",
+                                        Height=button.Height,
+                                        Width=button.Width,
+                                        FontFamily=button.FontFamily,
+                                        FontWeight=str(button.FontWeight),
+                                        Text=button.Text,
+                                        RenderTransform=button.RenderTransform,
+                                        FontSize=str(button.FontSize),
+                                        ShapeName="",
+                                        RenderTransformOrigin=button.RenderTransformOrigin,
+                                        X=str(button.X),
+                                        Y=str(button.Y))
     indent(project)
 
     titulos = [
@@ -183,7 +202,7 @@ def start_emulation(alarm_dir, directorio):
     ]
 
     # Escribir en el archivo CSV
-    with open('Report/report.csv', mode='w', newline='', encoding='utf-8') as report_csv:
+    with open('./Report/report.csv', mode='w', newline='', encoding='utf-8') as report_csv:
         escritor = csv.writer(report_csv, delimiter=',')  # Cambia el delimitador a coma
 
         # Escribir los títulos primero
@@ -193,9 +212,10 @@ def start_emulation(alarm_dir, directorio):
         escritor.writerows(tuples)
 
     project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)
-    return "project.xml"
+    os.system(f"start notepad++ project.xml")
+    #return "project.xml"
 
-    """os.system(f"start notepad++ project.xml")"""
+"""os.system(f"start notepad++ project.xml")"""
 
 
 """tree = ET.parse(r'C:\Emulation\Process Trainer MV-31\Prova\main.xaml')
@@ -352,3 +372,5 @@ with open('Report/report.csv', mode='w', newline='', encoding='utf-8') as report
 project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)
 
 os.system(f"start notepad++ project.xml")"""
+"""directorio = (r"C:\Emulation\HMIscreensYOKOGAWA")
+start_emulation(r'C:\Emulation\HMIscreensYOKOGAWA\Source\CAMSAlm-CENTUM.xlsx', directorio)"""

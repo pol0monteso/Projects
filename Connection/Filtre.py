@@ -323,7 +323,7 @@ def generate_excel_data(xlsx_directory):
 """
 
 
-import json
+"""import json
 import pyodbc
 import os
 import pandas as pd
@@ -403,7 +403,7 @@ def generate_units_json():
                 info['Unit'] = unit
 
     # Eliminar las entradas con unidad None o "(None)"
-    """results_dict = {tag: info for tag, info in results_dict.items() if info['Unit'] not in [None, "(None)"]}"""
+    #results_dict = {tag: info for tag, info in results_dict.items() if info['Unit'] not in [None, "(None)"]}"
 
     # Guardar el diccionario en un archivo JSON
     json_file_path = r'C:\Emulation\HMIscreensYOKOGAWA\Source\results_with_units.json'
@@ -457,13 +457,13 @@ def load_xlsx_data(xlsx_file_path):
     except Exception as e:
         print(f"Error al procesar el archivo {xlsx_file_path}: {e}")
         return {}
-"""units = generate_units_json()"""
-"""print("Unidades cargadas desde el archivo JSON:")
+units = generate_units_json()
+print("Unidades cargadas desde el archivo JSON:")
 for tag, info in units.items():
-    print(f"Tag: {tag}, Unidad: {info['Unit']}, SH: {info['SH']}, SL: {info['SL']}, Comment: {info['Comment']}")"""
+    print(f"Tag: {tag}, Unidad: {info['Unit']}, SH: {info['SH']}, SL: {info['SL']}, Comment: {info['Comment']}")
 
 
-"""xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
+xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
 xlsx_data = generate_excel_data(xlsx_directory)
 
 
@@ -476,3 +476,154 @@ print("Diccionario fusionado:")
 for tag, info in merge_dict.items():
     print(f"Tag: {tag}, Info: {info}")"""
 
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Nov 14 16:46:12 2024
+
+@author: pol.monteso
+"""
+
+import pyodbc
+import os
+import pandas as pd
+
+
+def load_units(path):
+    # Ruta de los archivos .mdb
+    #path = r'C:\Emulation\HMIscreensYOKOGAWA\Source'
+
+    # Archivos .mdb que comienzan con 'FCS' o 'SCS'
+    files = [f for f in os.listdir(path) if (f.endswith('.mdb') or f.endswith('.accdb')) and (f.startswith('FCS') or f.startswith('SCS'))]
+
+    # Diccionario para almacenar los resultados
+    results_dict = {}
+
+    for file in files:
+        # Conectar a la base de datos
+        conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + os.path.join(path, file)
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+
+        # Ejecutar la consulta incluyendo SH y SL
+        query = '''
+                SELECT ElemName, UnitID, SH, SL, Comment
+                FROM ElemTbl;
+                '''
+        cursor.execute(query)
+
+        # Obtener los resultados y agregarlos al diccionario
+        for row in cursor.fetchall():
+            elem_name = row.ElemName
+            unit_id = row.UnitID
+            sh_value = row.SH
+            sl_value = row.SL
+            comment_value = row.Comment
+            if elem_name not in results_dict:
+                results_dict[elem_name] = {
+                    'UnitID': unit_id,
+                    'Unit': None,
+                    'SH': sh_value,
+                    'SL': sl_value,
+                    'Comment': comment_value
+                }
+
+        # Cerrar la conexión
+        cursor.close()
+        conn.close()
+
+    # Leer la tabla UnitTbl del archivo PjtRef.mdb
+    pjt_ref_file = 'PjtRef.mdb'
+    pjt_ref_path = os.path.join(path, pjt_ref_file)
+    conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + pjt_ref_path
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()
+
+    # Ejecutar la consulta para obtener UnitID y Unit
+    query = '''
+    SELECT UnitID, Unit
+    FROM UnitTbl;
+    '''
+    cursor.execute(query)
+
+    # Crear un DataFrame con la tabla UnitTbl
+    unit_tbl_df = pd.DataFrame.from_records(cursor.fetchall(), columns=[desc[0] for desc in cursor.description])
+
+    # Cerrar la conexión
+    cursor.close()
+    conn.close()
+
+    # Actualizar el diccionario con las unidades
+    for _, row in unit_tbl_df.iterrows():
+        unit_id = row['UnitID']
+        unit = row['Unit']
+        for tag, info in results_dict.items():
+            if info['UnitID'] == unit_id:
+                info['Unit'] = unit
+
+    # Retornar el diccionario de resultados
+    return results_dict
+
+
+def load_csv_data(csv_file_path):
+    try:
+        # Leer el archivo CSV
+        df = pd.read_csv(csv_file_path, skiprows=3, header=None)
+
+        # Diccionario para almacenar los datos del CSV
+        csv_data = {}
+
+        # Iterar por cada fila del DataFrame
+        for index, row in df.iterrows():
+            if len(row) >= 236:  # Asegúrate de que hay al menos 236 columnas
+                name = row[1]  # Columna B
+                hh = row[131]  # Columna EB
+                ll = row[137]  # Columna EH
+                ph = row[217]  # Columna HJ
+                pl = row[235]  # Columna IB
+
+                if pd.notna(name):
+                    csv_data[name] = {
+                        'HH': hh,
+                        'LL': ll,
+                        'PH': ph,
+                        'PL': pl
+                    }
+
+        return csv_data
+
+    except Exception as e:
+        print(f"Error al procesar el archivo {csv_file_path}: {e}")
+        return {}
+
+
+def generate_csv_data(csv_directory):
+    csv_data = {}
+    for file in os.listdir(csv_directory):
+        if file.endswith('.csv'):
+            csv_file_path = os.path.join(csv_directory, file)
+            file_data = load_csv_data(csv_file_path)
+            csv_data.update(file_data)
+
+    return csv_data
+
+
+# Llamadas principales
+"""units = load_units(r'C:\Emulation\HMIscreensYOKOGAWA\Source')
+print("Unidades cargadas desde archivos .mdb:")
+
+for tag, info in units.items():
+    print(f"Tag: {tag}, Unidad: {info['Unit']}, SH: {info['SH']}, SL: {info['SL']}, Comment: {info['Comment']}")
+
+# Procesamiento de datos desde el directorio de archivos .csv
+csv_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
+csv_data = generate_csv_data(csv_directory)
+print("\nDatos cargados desde los archivos CSV:")
+
+for tag, values in csv_data.items():
+    print(f"Tag: {tag}, Valores: {values}")
+
+# Fusionar los diccionarios
+merged_dict = {key: {**units[key], **csv_data[key]} for key in units if key in csv_data}
+print("\nDiccionario fusionado:")
+for tag, info in merged_dict.items():
+    print(f"Tag: {tag}, Info: {info}")"""

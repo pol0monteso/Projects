@@ -1,10 +1,10 @@
 import uuid
 
-class IISCondition:
+"""class IISCondition:
     def __init__(self, Expression, ColorChangeType, ColorC, PropertyNameCC, PropertyNameBLK, ColorB, IsContinuous, BlinkingType, ReplaceText, Text):
         self.Expression = Expression
         self.ColorChangeType = ColorChangeType
-        self.ColorB = ColorB
+        self.ColorB1 = ColorB
         self.ColorC = ColorC
         self.PropertyNameCC = PropertyNameCC
         self.PropertyNameBLK = PropertyNameBLK
@@ -16,9 +16,33 @@ class IISCondition:
     @classmethod
     def default(cls):
         return cls(Expression="", ColorChangeType="", ColorC="", ColorB="", PropertyNameCC="", PropertyNameBLK="",
-                   IsContinuous=False, BlinkingType="False", ReplaceText="False", Text="")
+                   IsContinuous=False, BlinkingType="False", ReplaceText="False", Text="")"""
 
+class IISCondition:
+    def __init__(self, Expression, ColorChangeType1, ColorC1, PropertyNameCC1, PropertyNameBLK1, ColorB1, IsContinuous, BlinkingType1, ReplaceText, Text,
+                 ColorChangeType2, ColorC2, PropertyNameCC2, PropertyNameBLK2, ColorB2, BlinkingType2):
+        self.Expression = Expression
+        self.ColorChangeType1 = ColorChangeType1
+        self.ColorB1 = ColorB1
+        self.ColorC1 = ColorC1
+        self.PropertyNameCC1 = PropertyNameCC1
+        self.PropertyNameBLK1 = PropertyNameBLK1
+        self.IsContinuous = IsContinuous
+        self.BlinkingType1 = BlinkingType1
+        self.ReplaceText = ReplaceText
+        self.Text = Text
+        self.ColorChangeType2 = ColorChangeType2
+        self.ColorB2 = ColorB2
+        self.ColorC2 = ColorC2
+        self.PropertyNameCC2 = PropertyNameCC2
+        self.PropertyNameBLK2 = PropertyNameBLK2
+        self.BlinkingType2 = BlinkingType2
 
+    @classmethod
+    def default(cls):
+        return cls(Expression="", ColorChangeType1="", ColorC1="", ColorB1="", PropertyNameCC1="", PropertyNameBLK1="",
+                   IsContinuous=False, BlinkingType1="False", ReplaceText="False", Text="",ColorChangeType2="", ColorC2="",
+                   ColorB2="", PropertyNameCC2="", PropertyNameBLK2="", BlinkingType2="")
 class Button:
     def __init__(self, Background, Text, FontFamily, FontWeight, FontSize, Height, Width, RenderTransform,
                  RenderTransformOrigin, ShapeName, Screen, X, Y, Window, ZIndex, CommandData, FunctionType, DataTag,
@@ -67,7 +91,7 @@ class Tag:
 
 
 class Touch:
-    def __init__(self, Stroke, Height, Width, Shapename, Screen, RenderTransform, RenderTransformOrigin, ZIndex, X, Y, Window):
+    def __init__(self, Stroke, Height, Width, Shapename, Screen, RenderTransform, RenderTransformOrigin, ZIndex, X, Y, Window, FunctionType, DataTag, CommandData):
         self.Stroke = Stroke
         self.Height = Height
         self.Width = Width
@@ -78,11 +102,14 @@ class Touch:
         self.X = X
         self.Y = Y
         self.Window = Window
+        self.FunctionType = FunctionType
+        self.DataTag = DataTag
+        self.CommandData = CommandData
 
     @classmethod
     def default(cls):
         return cls(Stroke="White", Shapename="", Height="100", Width="100", Screen="", RenderTransformOrigin="",
-                   RenderTransform="", ZIndex=1000, X="0", Y="0", Window="")
+                   RenderTransform="", ZIndex=1000, X="0", Y="0", Window="", FunctionType="", DataTag="", CommandData="")
 
 
 class Alarm:
@@ -113,7 +140,7 @@ class Binding:
 
 class Level:
     def __init__(self, Width, Height, X, Y, ShapeName, Fill, Stroke, StrokeThickness, LevelTag, IISCondition, Binding,
-                 ZIndex, LevelFill1, LevelValue1, LevelValue2, Orientation, dataChar, binding_dic):
+                 ZIndex, LevelFill1, LevelValue1, LevelValue2, Orientation, dataChar, binding_dic, RenderTransform, RenderTransformOrigin):
         self.Width = Width
         self.Height = Height
         self.X = X
@@ -132,12 +159,14 @@ class Level:
         self.Orientation = Orientation
         self.dataChar = dataChar
         self.binding_dic = binding_dic
+        self.RenderTransform = RenderTransform
+        self.RenderTransformOrigin = RenderTransformOrigin
 
     @classmethod
     def default(cls):
         return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Rectangle", Fill="Transparent", Stroke="Black",
                    StrokeThickness=1, LevelTag="", IISCondition=[], Binding=[], ZIndex=0, LevelFill1="", Orientation="",
-                   LevelValue1="", LevelValue2="", dataChar=None, binding_dic={})
+                   LevelValue1="", LevelValue2="", dataChar=None, binding_dic={}, RenderTransform="1,0,0,1,0,0", RenderTransformOrigin="")
 
 class Rectangle:
     def __init__(self, Width, Height, X, Y, ShapeName, Fill, Stroke, StrokeThickness, Name, Tag,
@@ -376,9 +405,10 @@ class Polygon:
             return cls(ID=str(uuid.uuid4()), Name="", HysysVar="", NumDecimals=3)
 
 
-class ProcessData():
+class ProcessData:
     def __init__(self, ShapeName, X, Y, Width, Height, Background, Foreground, Text, FontSize, FontFamily, TextAlign,
-                 IISCondition, Binding, Rotation, ZIndex, dataChar, binding_dic, Tag, ZIndexGroup, isVisibleUnits):
+                 IISCondition, Binding, Rotation, ZIndex, dataChar, binding_dic, Tag, ZIndexGroup, isVisibleUnits,
+                 RenderTransform, RenderTransformOrigin):
         self.ShapeName = ShapeName
         self.X = X
         self.Y = Y
@@ -399,13 +429,17 @@ class ProcessData():
         self.Tag = Tag
         self.ZIndexGroup = ZIndexGroup
         self.isVisibleUnits = isVisibleUnits
+        self.RenderTransform = RenderTransform
+        self.RenderTransformOrigin = RenderTransformOrigin
 
     @classmethod
     def default(cls):
         return cls(ShapeName="", X=0, Y=0, Width=300, Height=300, Background="#00FF0000", Foreground="Black",
                    Text="???????",
                    FontSize="12", FontFamily="Segoe UI", TextAlign="Left", IISCondition=[], Binding=[], Rotation=0,
-                   ZIndex=0, dataChar=None, binding_dic={}, Tag="", ZIndexGroup=0, isVisibleUnits=False)
+                   ZIndex=0, dataChar=None, binding_dic={}, Tag="", ZIndexGroup=0, isVisibleUnits=False, RenderTransform="1,0,0,1,0,0",
+                   RenderTransformOrigin="")
+
 class Line:
     def __init__(self, Width, Height, X, Y, ShapeName, Fill, Stroke, StrokeThickness, Name, Tag,
                  RenderTransform, RenderTransformOrigin, IISCondition, Binding, Points, Rotation, LineStyle,

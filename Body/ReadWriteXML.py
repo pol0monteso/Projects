@@ -26,7 +26,7 @@ def writeTouch(window_elem, touch, windows_dict):
 
     touch_elem = ET.SubElement(window_elem, "Touch",
                                Stroke=touch.Stroke,
-                               Screen=touch.Screen, #str(id_),
+                               Screen=touch.Screen,  #str(id_),
                                Height=touch.Height,
                                Width=touch.Width,
                                RenderTransform=touch.RenderTransform,
@@ -35,40 +35,45 @@ def writeTouch(window_elem, touch, windows_dict):
                                Y=str(touch.Y),
                                ShapeName=touch.ShapeName)
 
+
 def writeTags(tag_list, tags, project_tree, tagName_list):
     if tag_list:
         for t in tag_list:
+            t.HysysVar = t.HysysVar.replace("0@@100@@IIS.Saw", "@@@@")
             if t.Name not in tagName_list and (
-                    ".PV" in t.Name or ".MV" in t.Name):  # Verificamos si el nombre no está en la lista
+                    ".PV" in t.Name or ".MV" in t.Name or "SCALE" in t.Name or ".#PV" in t.Name or ".ALRM" in t.Name or
+                    ".MODE" in t.Name or ".CMOD" in t.Name or ".OMOD" in t.Name ):
                 ET.SubElement(tags, "Tag",
                               ID=str(t.ID),
+                              IsMaster="True",
                               Name=str(t.Name),
                               HysysVar=str(t.HysysVar),
                               NumDecimals=str(t.NumDecimals),
                               HysysVarUnit=str(t.HysysVarUnit))
-                tagName_list.append(str(t.Name))  # Añadimos el nombre a la lista después de crear el subelemento
+                tagName_list.append(str(t.Name))
             elif t.Name not in tagName_list and (
                     ".ALMPV" in t.Name):
                 ET.SubElement(tags, "Tag",
                               ID=str(t.ID),
                               Name=str(t.Name),
+                              IsMaster="True",
                               HysysVar=str(t.HysysVar),
                               NumDecimals=str(t.NumDecimals),
                               HysysVarUnit=str(t.HysysVarUnit))
-                tagName_list.append(str(t.Name))  # Añadimos el nombre a la lista después de crear el subelemento
+                tagName_list.append(str(t.Name))
         #Escribimos el archivo solo una vez después de añadir todos los elementos
         """project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)"""
 
 
 def initScreen(root, project, windows, project_tree, tags, name, tagName_list, units, tuplas_report, alarms,
-               alarms_dict, window_dict, touch_list, alarmsPriority_dict, button_list):
+               alarms_dict, window_dict, touch_list, alarmsPriority_dict, button_list, tag_list):
     print("Starting...")
     # Define la estructura del árbol XML con los valores proporcionados
     window = ET.SubElement(windows, "Window")
     size = writeWindow(root, window, name, window_dict)
-
-    tag_list, object_list, tuples = readRect_rec(root, 0, 0, "", "", False, [], [], [], name, tuplas_report)
-    object_list = orderByZIndex(object_list)
+    print("READ : ")
+    tag_list, object_list, tuples = readRect_rec(root, 0, 0, "", "", False, tag_list, [], [], name, tuplas_report)
+    #object_list = orderByZIndex(object_list)
     for obj in object_list:
         if type(obj) == Touch:
             obj.Window = window
@@ -77,18 +82,22 @@ def initScreen(root, project, windows, project_tree, tags, name, tagName_list, u
             obj.Window = window
             button_list.append(obj)
 
-    print("TAGS llegits")
-    print("OBJECTES llegits")
-    writeObjects(object_list, window, project_tree, size, tag_list, units, alarms, alarms_dict, window_dict, alarmsPriority_dict)
+    #print("TAGS llegits")
+    #print("OBJECTES llegits")
+    print("WRITE OBJECTS: ")
+    writeObjects(object_list, window, project_tree, size, tag_list, units, alarms, alarms_dict, window_dict,
+                 alarmsPriority_dict)
+    print("WRITE TAGS: ")
     writeTags(tag_list, tags, project_tree, tagName_list)
-    print("AFEGIT A XML")
-    indent(project)
+
+    """indent(project)"""
 
     """project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)"""
-    return tuples, window_dict, touch_list
+    return tuples, window_dict, touch_list, tag_list
 
 
-def writeObjects(object_list, window, project_tree, size, tag_list, units, alarms, alarms_dict, windows_dict, alarmPriority_dict):
+def writeObjects(object_list, window, project_tree, size, tag_list, units, alarms, alarms_dict, windows_dict,
+                 alarmPriority_dict):
     shape_name_map = {
         Rectangle: "rect_",
         Sector: "sect_",
@@ -99,10 +108,12 @@ def writeObjects(object_list, window, project_tree, size, tag_list, units, alarm
         Text: "text_",
         ProcessData: "dataChar_",
         Touch: "touch_",
-        Level:"level_"
+        Level: "level_",
+        Button: "button_"
     }
     for idx, obj in enumerate(object_list):
         shape_type = type(obj)
+        obj.ShapeName = str(shape_name_map[shape_type]) + str(idx)
         if obj.Width == size.Width:
             obj.Width = float(obj.Width) - 1
         elif obj.Height == size.Height:
@@ -124,9 +135,9 @@ def writeObjects(object_list, window, project_tree, size, tag_list, units, alarm
             elif shape_type == Text:
                 writeText(obj, window, project_tree, units, tag_list, alarms, alarms_dict, alarmPriority_dict)
             elif shape_type == ProcessData:
-                writeDataCharacter(obj, window, tag_list, units)
+                writeDataCharacter(obj, window, tag_list, units, project_tree)
             elif shape_type == Level:
-                write_level(obj, window, project_tree, tag_list)
+                write_level(obj, window, project_tree, tag_list, units)
             """elif shape_type == Touch:
                 writeTouch(window, obj, windows_dict)"""
 
@@ -200,6 +211,7 @@ def writeStartArrow(object, element):
                       FillEnabled="True",
                       PropertyName="StartArrow")
 
+
 def writePolyLine(object, window, project_tree):
     line_element = ET.SubElement(window, "Line",
                                  Width=str(object.Width),
@@ -235,7 +247,7 @@ def writeBindablePoints(object, element):
 
 
 def writeEllipse(object, window, project_tree):
-    sector_element = ET.SubElement(window, "Ellipse")
+    sector_element = ET.SubElement(window, "DynamicEllipse")
     writeShapeAttributes(sector_element, object)
     indent(sector_element)
     writeCondition(object, sector_element, project_tree)
@@ -279,7 +291,7 @@ def writeSector(object, window, project_tree):
     writeBinding(object, sector_element, project_tree)
 
 
-def write_level(object, window, project_tree, tag_list):
+def write_level(object, window, project_tree, tag_list, units):
     for bind in object.binding_dic:
         if ".PV" in object.dataChar.Value:
             for tag in tag_list:
@@ -305,12 +317,98 @@ def write_level(object, window, project_tree, tag_list):
                 object.LevelTag = tag1.ID
                 tag1.Name = str(object.binding_dic[bind]) + ".MV"
                 tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
-                if tag1.Name == ".PV":
+                if tag1.Name == ".MV":
                     write = False
                 else:
                     tag_list.append(tag1)
+        elif "SCALE" in object.dataChar.Value:
+            for tag in tag_list:
+                type_scale = object.dataChar.Value.split('.')[-1]
+                if str(object.dataChar.Value) == tag.Name:
+                    object.LevelTag = tag.ID
+                    print(tag.Name)
+                """if str(object.binding_dic[bind]) != str(type_scale):
+                    if str(object.binding_dic[bind]) + '.' + str(type_scale) == tag.Name:
+                        object.LevelTag = tag.ID
+                        print(tag.Name)"""
+                if object.LevelTag == "":
+                    if bind == object.dataChar.GenericName.split('.')[0]:
+                        tag1 = Tag.default()
+                        tag1.ID = uuid.uuid4()
+                        object.LevelTag = tag1.ID
+                        tag1.Name = str(object.binding_dic[bind]) + '.' + str(type_scale)
+                        print(tag1.Name +f"------X:{object.X}-----Y:{object.Y}")
+                        tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
+                        if tag1.Name == "." + str(type_scale):
+                            write = False
+                        else:
+                            tag_list.append(tag1)
 
-    level_element = ET.SubElement(window, "Level",
+    if "$" in str(object.LevelValue1):
+        level1 = object.LevelValue1
+        pv_mv = 0
+        data_level_list = level1.split('.')
+        if len(data_level_list) > 1:
+            for bind in object.binding_dic:
+                if bind in data_level_list[0]:
+                    level1 = level1.replace(bind, object.binding_dic[bind])
+            tag_search = level1.split('.')[0]
+            if data_level_list[-1] == "SL":
+                if tag_search in units:
+                    unit_info = units[tag_search]
+                    object.LevelValue1 = str(unit_info['SL'])
+                    pv_mv = -1
+            elif data_level_list[-1] == "ML":
+                if tag_search in units:
+                    unit_info = units[tag_search]
+                    object.LevelValue1 = str(unit_info['ML'])
+                    pv_mv = 1
+            for tag in tag_list:
+                if pv_mv == -1:
+                    if str(tag_search) + ".PV" == tag.Name:
+                        object.LevelTag = tag.ID
+                elif pv_mv == 1:
+                    if str(tag_search) + ".MV" == tag.Name:
+                        object.LevelTag = tag.ID
+            if object.LevelTag == "":
+                tag1 = Tag.default()
+                tag1.ID = uuid.uuid4()
+                object.LevelTag = tag1.ID
+                if pv_mv == -1:
+                    tag1.Name = str(tag_search) + ".PV"
+                    tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
+                    if tag1.Name == ".PV":
+                        write = False
+                    else:
+                        tag_list.append(tag1)
+                elif pv_mv == 1:
+                    tag1.Name = str(tag_search) + ".MV"
+                    tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
+                    if tag1.Name == ".MV":
+                        write = False
+                    else:
+                        tag_list.append(tag1)
+        else:
+            object.LevelValue1 = object.binding_dic[object.LevelValue1]
+    if "$" in str(object.LevelValue2):
+        level2 = object.LevelValue2
+        data_level_list = level2.split('.')
+        if len(data_level_list) > 1:
+            for bind in object.binding_dic:
+                if bind in data_level_list[0]:
+                    level2 = level2.replace(bind, object.binding_dic[bind])
+            tag_search = level2.split('.')[0]
+            if data_level_list[-1] == "SH":
+                if tag_search in units:
+                    unit_info = units[tag_search]
+                    object.LevelValue2 = str(unit_info['SH'])
+            elif data_level_list[-1] == "MH":
+                if tag_search in units:
+                    unit_info = units[tag_search]
+                    object.LevelValue2 = str(unit_info['MH'])
+        else:
+            object.LevelValue2 = object.binding_dic[object.LevelValue2]
+    level_element = ET.SubElement(window, "DynamicLevel",
                                   Fill=str(object.Fill),
                                   Stroke=str(object.Stroke),
                                   StrokeThickness=str(object.StrokeThickness),
@@ -322,16 +420,24 @@ def write_level(object, window, project_tree, tag_list):
                                   Orientation=str(object.Orientation),
                                   LevelValue1=str(object.LevelValue1),
                                   LevelValue2=str(object.LevelValue2),
-                                  LevelTag=str(object.LevelTag),
+                                  Tag=str(object.LevelTag),
                                   MinValue=str(object.LevelValue1),
-                                  MaxValue=str(object.LevelValue2)
-    )
+                                  MaxValue=str(object.LevelValue2),
+                                  RenderTransform=object.RenderTransform,
+                                  RenderTransformOrigin=object.RenderTransformOrigin,
+                                  ShapeName=object.ShapeName
+                                  )
 
-def writeDataCharacter(object, window, tag_list, units):
+
+def writeDataCharacter(object, window, tag_list, units, project_tree,):
     write = True
+    if "-" in str(object.Y):
+        object.Y = "0"
+    if "-" in str(object.X):
+        object.X = "0"
     for bind in object.binding_dic:
         if bind in object.dataChar.Value:
-            if ".PV" in object.dataChar.Value:
+            if ".PV" in object.dataChar.Value and "UNIT" not in object.dataChar.Value:
                 for tag in tag_list:
                     if str(object.binding_dic[bind]) + ".PV" == tag.Name:
                         object.Tag = tag.ID
@@ -355,7 +461,7 @@ def writeDataCharacter(object, window, tag_list, units):
                     object.Tag = tag1.ID
                     tag1.Name = str(object.binding_dic[bind]) + ".MV"
                     tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
-                    if tag1.Name == ".PV":
+                    if tag1.Name == ".MV":
                         write = False
                     else:
                         tag_list.append(tag1)
@@ -365,10 +471,15 @@ def writeDataCharacter(object, window, tag_list, units):
                     object.Text = str(unit_info['Comment'])
                 else:
                     object.Text = str("GGG")
+            elif "UNIT" in object.dataChar.Value:
+                if object.binding_dic[bind] in units:
+                    unit_info = units[object.binding_dic[bind]]
+                    object.Text = str(unit_info['Unit'])
+                else:
+                    object.Text = str("UUU")
             elif "." not in object.dataChar.Value:
                 object.Text = str(object.binding_dic[bind])
             else:
-
                 object.Text = "RRR"
     for tag_ in tag_list:
         if tag_.ID == object.Tag:
@@ -399,13 +510,16 @@ def writeDataCharacter(object, window, tag_list, units):
                     del tag_"""
 
     if write:
-        data_element = ET.SubElement(window, "LabelText",
+        data_element = ET.SubElement(window, "ProcessData",
                                      FontAutoSize="True",
+                                     ShapeName=object.ShapeName,
                                      Background=object.Background,
                                      Foreground=object.Foreground,
                                      FontSize=object.FontSize,
                                      FontFamily=object.FontFamily,
                                      TextAlign=object.TextAlign,
+                                     RenderTransform=object.RenderTransform,
+                                     RenderTransformOrigin=object.RenderTransformOrigin,
                                      Content=object.Text)
         data_element.set("Width", str(float(object.Width)))
         data_element.set("Height", str(object.Height))
@@ -413,6 +527,8 @@ def writeDataCharacter(object, window, tag_list, units):
         data_element.set("Y", str(object.Y))
         data_element.set("Tag", str(object.Tag))
         data_element.set("ShapeName", object.ShapeName)
+        writeCondition(object, data_element, project_tree)
+        writeBinding(object, data_element, project_tree)
 
 
 def writeArc(object, window, project_tree):
@@ -572,7 +688,8 @@ def write1Text(text_obj, window, project_tree, units, tag_list, alarm_list):
 
 
 def writeText(text, window, project_tree, units, tag_list, alarm_list, alarm_dict, alarmPriority_dict):
-    text_element = writeTextElement(text, window, units, tag_list, alarm_list, project_tree, alarm_dict, alarmPriority_dict)
+    text_element = writeTextElement(text, window, units, tag_list, alarm_list, project_tree, alarm_dict,
+                                    alarmPriority_dict)
     if text_element:
         indent(text_element)
 
@@ -647,7 +764,7 @@ def writeWindow(root, window, name, window_dict):
 
 
 def writeBinding(rect, rect_label, project_tree):
-    if type(rect) == Text:
+    """if type(rect) == Text:
         if rect.Binding:
             bindList = ET.SubElement(rect_label, "BindingList")
             for bind in rect.Binding:
@@ -660,56 +777,66 @@ def writeBinding(rect, rect_label, project_tree):
         if rect.IISCondition:
             rect.Binding.clear()
             for cond in rect.IISCondition:
-                pattern = r'\b[\w-]+\.(?:PV|MV)[\w]*\b'
+                #pattern = r'\b[\w-]+\.(?:PV|MV)[\w]*\b'
+                pattern = r'\b[\w$-]*STATIONNAME[\w$-]*\.(?:PV|MV)[\w]*\b'
                 matches = re.findall(pattern, cond.Expression)
                 for match in matches:
                     bind = Binding.default()
                     bind.GenericName = match
                     bind.Value = match
                     if not any(bindi.GenericName == bind.GenericName for bindi in rect.Binding):
-                        rect.Binding.append(bind)
+                        rect.Binding.append(bind)"""
 
-        if rect.Binding:
-            bindList = ET.SubElement(rect_label, "BindingList")
-            for bind in rect.Binding:
-                if bind.Value != "":
-                    ET.SubElement(bindList, "Binding",
-                                  GenericName=str(bind.GenericName),
-                                  Value=str(bind.Value))
-            indent(bindList)
+    if rect.Binding:
+        bindList = ET.SubElement(rect_label, "BindingList")
+        for bind in rect.Binding:
+            if bind.Value != "":
+                ET.SubElement(bindList, "Binding",
+                              GenericName=str(bind.GenericName),
+                              Value=str(bind.Value))
+        indent(bindList)
         """project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)"""
 
 
 def writeCondition(rect, rect_label, project_tree):
     if rect.IISCondition:
         for cond in rect.IISCondition:
+            expression = change_condition(cond.Expression)
+            cond.Expression = expression
             for binding in rect.Binding:
-                forceCondition(cond, binding)
+                expression = force_condition(cond.Expression, binding.Value)
+                cond.Expression = expression
+                #forceCondition(cond, binding)
         for cond in rect.IISCondition:
             expression_list = filtrar_y_separar(cond.Expression)
             nueva_expresion = cond.Expression
-            for e in expression_list:
-                """cond.Expression = cond.Expression.replace(e, '"' + str(e) + '"')"""
+            """for e in expression_list:
                 nueva_expresion = re.sub(r'\b' + re.escape(e) + r'\b', '"' + str(e) + '"', nueva_expresion)
-            cond.Expression = nueva_expresion
+            cond.Expression = nueva_expresion"""
         condList = ET.SubElement(rect_label, "ConditionsList")
         for cond in rect.IISCondition:
-            if not ((cond.ColorC == "" and cond.ColorB == "" and cond.ReplaceText == "False") or
+            if not ((cond.ColorC1 == "" and cond.ColorB1 == "" and cond.ReplaceText == "False") or
                     (cond.Expression == "2<1,0" or cond.Expression == "2<1,0 and 2<1,0" or cond.Expression == "2<1,0 "
                                                                                                               "or "
                                                                                                               "2<1,0")):
                 condition = ET.SubElement(condList, "IISCondition",
                                           Expression=str(cond.Expression),
-                                          ColorChangeType=str(cond.ColorChangeType),
-                                          ColorC=str(cond.ColorC),
-                                          ColorB=str(cond.ColorB),
-                                          PropertyNameCC=str(cond.PropertyNameCC),
-                                          PropertyNameBLK=str(cond.PropertyNameBLK),
+                                          ColorChangeType1=str(cond.ColorChangeType1),
+                                          ColorC1=str(cond.ColorC1),
+                                          ColorB1=str(cond.ColorB1),
+                                          PropertyNameCC1=str(cond.PropertyNameCC1),
+                                          PropertyNameBLK1=str(cond.PropertyNameBLK1),
                                           IsContinuous=str(cond.IsContinuous),
                                           ReplaceText=cond.ReplaceText,
-                                          Text=cond.Text, #TODO: CHANGE TEXT NAME IN SCRIPT AND IIS CONTROL DYNAMICTEXT
-                                          BlinkingType="False")
-
+                                          Text=cond.Text,
+                                          BlinkingType1="False",
+                                          ColorChangeType2=str(cond.ColorChangeType2),
+                                          ColorC2=str(cond.ColorC2),
+                                          ColorB2=str(cond.ColorB2),
+                                          PropertyNameCC2=str(cond.PropertyNameCC2),
+                                          PropertyNameBLK2=str(cond.PropertyNameBLK2),
+                                          BlinkingType2="False"
+                                          )
 
             indent(condList)
         """project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)"""

@@ -580,13 +580,17 @@ def load_csv_data(csv_file_path):
                 ll = row[137]  # Columna EH
                 ph = row[217]  # Columna HJ
                 pl = row[235]  # Columna IB
+                ml = row[141]
+                mh = row[140]
 
                 if pd.notna(name):
                     csv_data[name] = {
                         'HH': hh,
                         'LL': ll,
                         'PH': ph,
-                        'PL': pl
+                        'PL': pl,
+                        'MH': mh,
+                        'ML': ml
                     }
 
         return csv_data

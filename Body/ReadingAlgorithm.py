@@ -116,10 +116,12 @@ def parse_render_transform(child, render_list):
     return rt"""
 
 
-def parse_fill(fill):
+"""def parse_fill(fill):
     match = re.search(r'Color1=([#A-Fa-f0-9]+), Color2=([#A-Fa-f0-9]+)', fill)
+    return match.group(1) if match else fill"""
+def parse_fill(fill):
+    match = re.search(r'Color1=([#A-Fa-f0-9a-zA-Z]+), Color2=([#A-Fa-f0-9a-zA-Z]+)', fill)
     return match.group(1) if match else fill
-
 
 """def set_common_attributes(obj, child, rt, ro, l, t, aux):
     attrs = {"Tag", "Stroke", "StrokeThickness", "Fill", "ShapeWidth", "ShapeHeight", "Canvas.Left", "Canvas.Top"}
@@ -139,7 +141,7 @@ def parse_fill(fill):
 
 
 def set_common_attributes(obj, child, ro, l, t, aux, render_list, name, tuplas_report):
-    attrs = {"Tag", "Stroke", "StrokeThickness", "Fill", "ShapeWidth", "ShapeHeight", "Canvas.Left", "Canvas.Top",
+    attrs = {"Stroke", "StrokeThickness", "Fill", "ShapeWidth", "ShapeHeight", "Canvas.Left", "Canvas.Top",
              "Rotation", "Panel.ZIndex"}
     rt = 0
     for attr in attrs:
@@ -294,24 +296,33 @@ def set_common_attributes(obj, child, ro, l, t, aux, render_list, name, tuplas_r
 def process_conditions(obj, child):
     for condition in child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel'
                                    ';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}Condition'):
+        colorChange = False
         cond = IISCondition.default()
         cond.Expression = re.sub(r'\b0\b', str("0,0"), condition.attrib.get("Expression", ""))
         cond.IISCondition = condition.attrib.get("Continuous", "")
         for action in condition:
             for type in action:
                 if type.tag.endswith("ColorChange"):
-                    cond.ColorC = type.attrib.get("Color", "")
-                    cond.ColorChangeType = type.attrib.get("ColorChangeType", "")
-                    if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
-                        cond.ColorChangeType = "NormalColorChange"
-                    cond.PropertyNameCC = type.attrib.get("PropertyName", "")
+                    if not colorChange:
+                        colorChange = True
+                        cond.ColorC1 = type.attrib.get("Color", "")
+                        cond.ColorChangeType1 = type.attrib.get("ColorChangeType", "")
+                        if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
+                            cond.ColorChangeType1 = "NormalColorChange"
+                        cond.PropertyNameCC1 = type.attrib.get("PropertyName", "")
+                    else:
+                        cond.ColorC2 = type.attrib.get("Color", "")
+                        cond.ColorChangeType2 = type.attrib.get("ColorChangeType", "")
+                        if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
+                            cond.ColorChangeType2 = "NormalColorChange"
+                        cond.PropertyNameCC2 = type.attrib.get("PropertyName", "")
                 if type.tag.endswith("Blinking"):
-                    cond.PropertyNameBLK = type.attrib.get("PropertyName", "")
+                    cond.PropertyNameBLK1 = type.attrib.get("PropertyName", "")
                     if "TypeBlinking" in type.attrib and (
                             type.attrib["TypeBlinking"] == "AlarmSpecificBlinking" or type.attrib[
-                        "TypeBlinking"] == "Yes") and cond.PropertyNameBLK != "":
-                        cond.ColorB = "Red"
-                        cond.BlinkingType = "Yes"
+                        "TypeBlinking"] == "Yes") and cond.PropertyNameBLK1 != "":
+                        cond.ColorB1 = "Red"
+                        cond.BlinkingType1 = "Yes"
 
                     obj.IISCondition.append(cond)
 
@@ -325,7 +336,6 @@ def process_bindings(obj, child):
         """ or "TagInventat_" + ''.join(
             random.choices(string.ascii_uppercase + string.digits, k=5))"""
         obj.Binding.append(bind)
-
 
 def read_tag_and_binding_DataCharacter(obj, child):
     bind = child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.GenericName;assembly'
@@ -352,10 +362,14 @@ def readText(child, l, t, rt, ro, aux, render_list, name, tuplas_report):
         else:
             text1.Text = matches[0]
 
+
     attrib = child.attrib
     text1.FontSize = attrib.get("FontSize", "")
     text1.FontFamily = attrib.get("FontFamily", "")
-    text1.Foreground = attrib.get("Foreground", "")
+    if "Foreground" in child.attrib and "Null" not in child.attrib["Foreground"]:
+        text1.Background = attrib.get("Foreground", "")
+    else:
+        text1.Foreground = "#00FF0000"
     if "Background" in child.attrib and "Null" not in child.attrib["Background"]:
         text1.Background = attrib.get("Background", "")
     else:
@@ -380,6 +394,10 @@ def readText(child, l, t, rt, ro, aux, render_list, name, tuplas_report):
         text1.FontWeight = attrib["FontWeight"]
 
     process_bindings(text1, child)
+    if "$" in text1.Text:
+        for bind in text1.Binding:
+            if bind.GenericName in text1.Text:
+                text1.Text = text1.Text.replace(bind.GenericName, bind.Value)
     read_conditions_alarms(child, text1)
     """process_conditions(text1, child)"""
     """process_bindings(text1, child)"""
@@ -387,6 +405,29 @@ def readText(child, l, t, rt, ro, aux, render_list, name, tuplas_report):
     return text1
 
 
+"""for action in condition:
+    for type in action:
+        if type.tag.endswith("ColorChange"):
+            if not colorChange:
+                colorChange = True
+                cond.ColorC1 = type.attrib.get("Color", "")
+                cond.ColorChangeType1 = type.attrib.get("ColorChangeType", "")
+                if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
+                    cond.ColorChangeType1 = "NormalColorChange"
+                cond.PropertyNameCC1 = type.attrib.get("PropertyName", "")
+            else:
+                cond.ColorC2 = type.attrib.get("Color", "")
+                cond.ColorChangeType2 = type.attrib.get("ColorChangeType", "")
+                if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
+                    cond.ColorChangeType2 = "NormalColorChange"
+                cond.PropertyNameCC2 = type.attrib.get("PropertyName", "")
+        if type.tag.endswith("Blinking"):
+            cond.PropertyNameBLK1 = type.attrib.get("PropertyName", "")
+            if "TypeBlinking" in type.attrib and (
+                    type.attrib["TypeBlinking"] == "AlarmSpecificBlinking" or type.attrib[
+                "TypeBlinking"] == "Yes") and cond.PropertyNameBLK1 != "":
+                cond.ColorB1 = "Red"
+                cond.BlinkingType1 = "Yes"""
 def read_conditions_alarms(child, obj):
     for condition in child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel'
                                    ';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}Condition'):
@@ -394,15 +435,24 @@ def read_conditions_alarms(child, obj):
         cond.Expression = re.sub(r'\b0\b', str("0,0"), condition.attrib.get("Expression", ""))
         cond.IISCondition = condition.attrib.get("Continuous", "")
         write = False
+        colorChange = False
         for action in condition:
             for type in action:
                 if type.tag.endswith("ColorChange"):
-                    cond.ColorC = type.attrib.get("Color", "")
-                    cond.ColorChangeType = type.attrib.get("ColorChangeType", "")
-                    if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
-                        cond.ColorChangeType = "NormalColorChange"
-                    cond.PropertyNameCC = type.attrib.get("PropertyName", "")
-                    write = True
+                    if not colorChange:
+                        cond.ColorC1 = type.attrib.get("Color", "")
+                        cond.ColorChangeType1 = type.attrib.get("ColorChangeType", "")
+                        if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
+                            cond.ColorChangeType1 = "NormalColorChange"
+                        cond.PropertyNameCC1 = type.attrib.get("PropertyName", "")
+                        write = True
+                    else:
+                        cond.ColorC2 = type.attrib.get("Color", "")
+                        cond.ColorChangeType2 = type.attrib.get("ColorChangeType", "")
+                        if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
+                            cond.ColorChangeType2 = "NormalColorChange"
+                        cond.PropertyNameCC2 = type.attrib.get("PropertyName", "")
+                        write = True
                 if type.tag.endswith("Blinking"):
                     cond.PropertyNameBLK = type.attrib.get("PropertyName", "")
                     if "TypeBlinking" in type.attrib and (
@@ -428,9 +478,9 @@ def read_conditions_alarms(child, obj):
             obj.IISCondition.append(cond)
 
 
-def readDataCharacter(child, l, t, rt, ro, aux):
+def readDataCharacter(child, l, t, rt, ro, aux, render_list, name, tuplas_report):
     text1 = ProcessData.default()
-
+    set_common_attributes(text1, child, ro, l, t, aux, render_list, name, tuplas_report)
     xml_data = ET.tostring(child, encoding='unicode')
     #pattern = r'</[^:]*:GenericNameComponent\.GenericName>(.*?)</[^:]*:Text>'
     #pattern = r'</[^>]+>(.*?)</[^:]+:Text>'
@@ -443,7 +493,10 @@ def readDataCharacter(child, l, t, rt, ro, aux):
     attrib = child.attrib
     text1.FontSize = attrib.get("FontSize", "")
     text1.FontFamily = attrib.get("FontFamily", "")
-    text1.Foreground = attrib.get("Foreground", "")
+    if "Foreground" in child.attrib and "Null" not in child.attrib["Foreground"]:
+        text1.Foreground = attrib.get("Foreground", "")
+    else:
+        text1.Foreground = "#00FF0000"
     if "Background" in child.attrib and "Null" not in child.attrib["Background"]:
         text1.Background = attrib.get("Background", "")
     else:
@@ -476,6 +529,12 @@ def readDataCharacter(child, l, t, rt, ro, aux):
                 text1.binding_dic[bind.attrib.get("GenericName", "")] = bind.attrib.get("Value", "")
                 binding.GenericName = binding.Value = bind.attrib.get("Value", "")
                 text1.Binding.append(binding)
+            else:
+                if text1.binding_dic[bind.attrib.get("GenericName", "")] == "":
+                    binding = Binding.default()
+                    text1.binding_dic[bind.attrib.get("GenericName", "")] = bind.attrib.get("Value", "")
+                    binding.GenericName = binding.Value = bind.attrib.get("Value", "")
+                    text1.Binding.append(binding)
         else:
             binding = Binding.default()
             text1.binding_dic[bind.attrib.get("GenericName", "")] = bind.attrib.get("Value", "")
@@ -483,18 +542,38 @@ def readDataCharacter(child, l, t, rt, ro, aux):
             text1.Binding.append(binding)
 
     #data_char.GenericName = bind.attrib.get("Value", "")
-    binding = child.find('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel'
-                         ';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}SimpleDataLink')
+    #binding = child.find('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel'
+                         #';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}SimpleDataLink')
     #data_char.Value = binding.attrib.get("Value", "")
-    data_char.Value = binding.attrib.get("Value", "")
-    """if ".PV" in Value:
-        
-    elif ".MV" in Value:"""
+    #data_char.Value = binding.attrib.get("Value", "")
 
+    for binding in child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel'
+                         ';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}SimpleDataLink'):
+            data_char.Value = binding.attrib.get("Value", "")
+
+    content = data_char.Value
+    data_list = content.split('.')
+    if len(data_list) == 2:
+        var_type = data_list[-1]
+        if var_type != "PV" and var_type != "MV" and "@" not in content:
+            if var_type in text1.binding_dic:
+                data_char.Value = data_char.Value.replace(var_type, text1.binding_dic[var_type])
+        else:
+            if "@" in content:
+                var_type = None
+                target_value = None
+
+                for key, value in text1.binding_dic.items():
+                    if value in ["PV", "MV"]:
+                        var_type = key
+                        target_value = value
+                        break
+
+                if var_type:
+                    data_char.Value = data_char.Value.replace(var_type, target_value)
     text1.dataChar = data_char
-
-    """process_conditions(text1, child)"""
-    """process_bindings(text1, child)"""
+    process_conditions(text1, child)
+    process_bindings(text1, child)
 
     return text1
 
@@ -684,6 +763,7 @@ def init_polyline(child, l, t, ro, aux, render_list, name, tuplas_report):
     return line
 
 
+#TODO: ATRIBUTS SENSE SENTIT TENEN EL XML
 def init_level(child, l, t, ro, aux, render_list, name, tuplas_report):
     level = Level.default()
     set_common_attributes(level, child, ro, l, t, aux, render_list, name, tuplas_report)
@@ -696,13 +776,13 @@ def init_level(child, l, t, ro, aux, render_list, name, tuplas_report):
             level.Orientation = "Horizontal"
     level.Width = child.attrib["Width"]
     level.Height = child.attrib["Height"]
-    if "BorderBrush" in child.attrib:
-        level.Stroke = child.attrib.Stroke
+    if "BorderBrush" in child.attrib and "Null" not in child.attrib["BorderBrush"]:
+        level.Stroke = child.attrib["BorderBrush"]
     else:
         level.Stroke = "Transparent"
     if "BorderThickness" in child.attrib:
         primer_numero = re.search(r'\d+', child.attrib["BorderThickness"])
-        level.StrokeThickness = primer_numero
+        level.StrokeThickness = int(primer_numero.group()) if primer_numero else 1
 
     for bind in child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.GenericName;assembly'
                               '=Yokogawa.IA.iPCS.Platform.View.Graphic.GenericName}GNBinding'):
@@ -712,6 +792,12 @@ def init_level(child, l, t, ro, aux, render_list, name, tuplas_report):
                 level.binding_dic[bind.attrib.get("GenericName", "")] = bind.attrib.get("Value", "")
                 binding.GenericName = binding.Value = bind.attrib.get("Value", "")
                 level.Binding.append(binding)
+            else:
+                if level.binding_dic[bind.attrib.get("GenericName", "")] == "":
+                    binding = Binding.default()
+                    level.binding_dic[bind.attrib.get("GenericName", "")] = bind.attrib.get("Value", "")
+                    binding.GenericName = binding.Value = bind.attrib.get("Value", "")
+                    level.Binding.append(binding)
         else:
             binding = Binding.default()
             level.binding_dic[bind.attrib.get("GenericName", "")] = bind.attrib.get("Value", "")
@@ -723,47 +809,101 @@ def init_level(child, l, t, ro, aux, render_list, name, tuplas_report):
         if "LowLimit" in datalink.attrib.get("AlternateValue", ""):
             if datalink.attrib.get("Value", "") == "":
                 level.LevelValue1 = 0
+            elif "SL" in datalink.attrib.get("Value", "") or "LO" in datalink.attrib.get("Value", "") or "ML" in datalink.attrib.get("Value", ""):
+                level.LevelValue1 = datalink.attrib.get("Value", "")
         elif "HighLimit" in datalink.attrib.get("AlternateValue", ""):
             if datalink.attrib.get("Value", "") == "":
                 level.LevelValue2 = 100
+            elif "SH" in datalink.attrib.get("Value", "") or "HI" in datalink.attrib.get("Value", "") or "MH" in datalink.attrib.get("Value", ""):
+                level.LevelValue2 = datalink.attrib.get("Value", "")
         elif datalink.attrib.get("Value", ""):
             data_char.GenericName = data_char.Value = datalink.attrib.get("Value", "")
             level.dataChar = data_char
+    content = data_char.Value
+    data_list = content.split('.')
+    if len(data_list) == 2:
+        var_type = data_list[-1]
+        tag_type = data_list[0]
+        if var_type != "PV" and var_type != "MV" and "@" not in content:
+            if var_type in level.binding_dic and tag_type in level.binding_dic:
+                data_char.Value = data_char.Value.replace(var_type, level.binding_dic[var_type])
+                data_char.Value = data_char.Value.replace(tag_type, level.binding_dic[tag_type])
+        else:
+            if "@" in content:
+                var_type = None
+                target_value = None
+
+                for key, value in level.binding_dic.items():
+                    if value in ["PV", "MV"]:
+                        var_type = key
+                        target_value = value
+                        break
+
+                if var_type:
+                    data_char.Value = data_char.Value.replace(var_type, target_value)
+        """var_type = data_list[-1]
+        if var_type != "PV" and var_type != "MV" and "@" not in content:
+            if var_type in level.binding_dic:
+                data_char.Value = data_char.Value.replace(var_type, level.binding_dic[var_type])
+        else:
+            if "@" in content:
+                var_type = None
+                target_value = None
+
+                for key, value in level.binding_dic.items():
+                    if value in ["PV", "MV"]:
+                        var_type = key
+                        target_value = value
+                        break
+
+                if var_type:
+                    data_char.Value = data_char.Value.replace(var_type, target_value)"""
 
     return level
+
 def readRect_rec(node, l, t, rt, ro, aux, tag_list, object_list, render_list, name, tuplas_report):
     for child in node:
         tag = child.tag
         if tag.endswith("IPCSRectangle"):
+            print("Reading RECT")
             rect1 = initRectangles(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(rect1, None, tag_list, object_list)
         elif tag.endswith("IPCSSector"):
+            print("Reading SECTOR")
             sect1 = initSector(child, l, t, ro, aux, False, render_list, name, tuplas_report)
             update_tags_and_lists(sect1, None, tag_list, object_list)
         elif tag.endswith("IPCSArc"):
+            print("Reading ARC")
             arc1 = initSector(child, l, t, ro, aux, True, render_list, name, tuplas_report)
             update_tags_and_lists(arc1, None, tag_list, object_list)
         elif tag.endswith("IPCSEllipse") or tag.endswith("IPCSCircle"):
+            print("Reading ELLIPSE")
             elip = initEllipse(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(elip, None, tag_list, object_list)
         elif tag.endswith("Text"):
+            print("Reading TEXT")
             text = readText(child, l, t, rt, ro, aux, render_list, name, tuplas_report)
             text.ZIndex = child.attrib["Panel.ZIndex"]
             update_tags_and_lists(text, None, tag_list, object_list)
         elif tag.endswith("GroupComponent"):
+            print("GROUP")
             zindex = child.attrib["Panel.ZIndex"]
             initGroupComp(child, l, t, rt, ro, aux, tag_list, object_list, render_list, name, tuplas_report)
         elif tag.endswith("IPCSFillArea"):
+            print("Reading FILLAREA")
             poly1 = initFillArea(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(poly1, None, tag_list, object_list)
         elif tag.endswith("IPCSPolyLine"):
+            print("Reading LINE")
             line = init_polyline(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(line, None, tag_list, object_list)
         elif tag.endswith("IPCSLine"):
+            print("Reading LINE")
             line = initLine(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(line, None, tag_list, object_list)
         elif tag.endswith("ProcessDataCharacter"):
-            text = readDataCharacter(child, l, t, rt, ro, aux)
+            print("Reading DATA")
+            text = readDataCharacter(child, l, t, rt, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(text, None, tag_list, object_list)
         elif tag.endswith("PenTool"):
             nombre_obj = child.attrib[("{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer"
@@ -784,6 +924,7 @@ def readRect_rec(node, l, t, rt, ro, aux, tag_list, object_list, render_list, na
             description = "Non-emulated Yokogawa object. IIS does not have Marker object to add to the screen."
             tuplas_report.append([name, nombre_obj, typeYoko, typeIIS, priority, description])
         elif tag.endswith("PushButton"):
+            print("Reading BUTTON")
             button = readButton(child, l, t, ro, aux, render_list, name, tuplas_report)
             if button:
                 process_bindings(button, child)
@@ -797,10 +938,12 @@ def readRect_rec(node, l, t, rt, ro, aux, tag_list, object_list, render_list, na
                 update_tags_and_lists(button, None, tag_list, object_list)
                 """object_list.append(button)"""
         elif tag.endswith("ProcessDataBar"):
+            print("Reading LEVEL")
             level = init_level(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(level, None, tag_list, object_list)
         elif tag.endswith("TouchTarget"):
-            touch = readTouch(child, l, t, ro, aux, render_list, name, tuplas_report)
+            print("Reading TARGET")
+            touch = readTouch(child, l, t, ro, aux, render_list, name, tuplas_report, tag_list)
             if touch:
                 object_list.append(touch)
             """nombre_obj = child.attrib[("{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer"
@@ -826,11 +969,15 @@ def readButton(child, l, t, ro, aux, render_list, name, tuplas_report):
     """button.Text = attrib.get("Text", "")"""
     button.Foreground = attrib.get("Foreground", "")
     if "Background" in attrib:
-        button.Background = attrib.get("Background")
+        button.Background = parse_fill(attrib.get("Background"))
+        #button.Background = attrib.get("Background")
     else:
         button.Background = "#00FFFFFF"
     button.FontFamily = attrib.get("FontFamily")
-    button.FontWeight = attrib.get("FontWeight")
+    if "FontWeight" in attrib and "Null" not in attrib["FontWeight"]:
+        button.FontWeight = attrib.get("FontWeight")
+    else:
+        button.FontWeight = "Normal"
     button.FontSize = attrib.get("FontSize")
     for binding in child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.GenericName;assembly'
                                  '=Yokogawa.IA.iPCS.Platform.View.Graphic.GenericName}GNBinding'):
@@ -855,7 +1002,7 @@ def readButton(child, l, t, ro, aux, render_list, name, tuplas_report):
                 button.Screen = bind.Value
                 button.FunctionType = "callWindow"
                 return button
-            """elif "type=instrumentCommand;cmbDataType=ProcessData;" in funct.attrib.get(
+            elif "type=instrumentCommand;cmbDataType=ProcessData;" in funct.attrib.get(
                     "FunctionAndParameter", ""):
                 input_str = funct.attrib.get("FunctionAndParameter", "")
                 data_dict = dict(item.split("=") for item in input_str.split(";") if "=" in item)
@@ -864,16 +1011,13 @@ def readButton(child, l, t, ro, aux, render_list, name, tuplas_report):
                 txt_data = data_dict.get("txtData")
                 command_data = data_dict.get("commandData")
 
-                # Imprimimos los resultados
-                print("txtData:", txt_data)
-                print("commandData:", command_data)
                 button.FunctionType = "instrumentCommand"
                 button.DataTag = txt_data
-                button.CommandData = command_data"""
+                button.CommandData = command_data
 
 
 
-def readTouch(child, l, t, ro, aux, render_list, name, tuplas_report):
+def readTouch(child, l, t, ro, aux, render_list, name, tuplas_report, tag_list):
     touch = Touch.default()
     attrib = child.attrib
 
@@ -901,6 +1045,29 @@ def readTouch(child, l, t, ro, aux, render_list, name, tuplas_report):
                 '}FunctionLinkControlCommandParameter'):
             if "type=callWindow;target=graphic" in funct.attrib.get("FunctionAndParameter", ""):
                 touch.Screen = bind.Value
+                touch.FunctionType = "callWindow"
+                return touch
+            elif "type=instrumentCommand;cmbDataType=ProcessData;" in funct.attrib.get(
+                    "FunctionAndParameter", ""):
+                input_str = funct.attrib.get("FunctionAndParameter", "")
+                data_dict = dict(item.split("=") for item in input_str.split(";") if "=" in item)
+
+                # Extraemos los valores de txtData y commandData
+                txt_data = data_dict.get("txtData")
+                if "$_STATIONNAME" in txt_data:
+                    tag1 = Tag.default()
+                    tag1.ID = uuid.uuid4()
+                    tag1.Name = txt_data
+                    tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
+                    tag_list.append(tag1)
+
+                command_data = data_dict.get("commandData")
+                # Imprimimos los resultados
+                """print("txtData:", txt_data)
+                print("commandData:", command_data)"""
+                touch.FunctionType = "instrumentCommand"
+                touch.DataTag = txt_data
+                touch.CommandData = command_data
                 return touch
 
 
@@ -954,85 +1121,121 @@ def force_zindex(zindex_list, zindexGroup):
 
     return tag_list"""
 
-
 def readTags(object):
+    tag_list = []
+    binding_dict = {}
+    binding_list = object.Binding
+    condition_list = object.IISCondition
+
+    for cond in condition_list:
+        if cond:
+            for bind in binding_list:
+                if bind:
+                    if "$_STATIONNAME" not in bind.GenericName and bind.Value != "":
+                        cond.Expression = cond.Expression.replace(bind.GenericName, bind.Value)
+            if "$" in cond.Expression and "$_STATIONNAME" not in cond.Expression:
+                cond.Expression = "1<2"
+            if "$_STATIONNAME" in cond.Expression:
+                pattern = r'\b[\w$-]*STATIONNAME[\w$-]*\.(?:PV|MV)[\w]*\b'
+                matches = re.findall(pattern, cond.Expression)
+                for match in matches:
+                    tag1 = Tag.default()
+                    tag1.Name = match
+                    binding_dict[match] = match
+                    tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
+                    if not any(tag.Name == tag1.Name for tag in tag_list):
+                        tag_list.append(tag1)
+            pattern = r'\b[\w-]+\.(?:PV|MV|MODE|CMOD|OMOD|#PV|ALRM)[\w]*\b'
+            matches = re.findall(pattern, cond.Expression)
+            for match in matches:
+                if match != "_STATIONNAME.PV":
+                    binding_dict[match] = match
+                    tag1 = Tag.default()
+                    tag1.Name = match
+                    tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
+                    if not any(tag.Name == tag1.Name for tag in tag_list):
+                        tag_list.append(tag1)
+    object.Binding = []
+    for key, value in binding_dict.items():
+        bind = Binding.default()
+        bind.GenericName = bind.Value = value
+        object.Binding.append(bind)
+    return tag_list
+"""def readTags(object):
     tag_list = []
     conditions_to_remove = []
 
     # Iterar sobre una copia de la lista original
     for cond in object.IISCondition[:]:
-        for bind in object.Binding:
-            if bind.Value != "":
-                # Reemplazar el nombre genérico con el valor
-                expression = cond.Expression.replace(bind.GenericName, bind.Value)
-                """expression_list = filtrar_y_separar(expression)
-                for e in expression_list:
-                    expression = expression.replace(e, '"'+str(e)+'"')"""
-                if re.search(r'#PV[\w]*|#MV[\w]*', expression):  # Buscar patrones #PV o #MV con caracteres adicionales
-                    conditions_to_remove.append(cond)
-                    break  # Salir del bucle si encontramos #PV o #MV
-                else:
-                    cond.Expression = expression
+        if cond:
+            for bind in object.Binding:
+                if bind.Value != "":
+                    # Reemplazar el nombre genérico con el valor
+                    expression = cond.Expression.replace(bind.GenericName, bind.Value)
+                    if re.search(r'#PV[\w]*|#MV[\w]*', expression):  # Buscar patrones #PV o #MV con caracteres adicionales
+                        conditions_to_remove.append(cond)
+                        break  # Salir del bucle si encontramos #PV o #MV
+                    else:
+                        cond.Expression = expression
 
     for cond in object.IISCondition:
-        if "$" in cond.Expression:
-            cond.Expression = "1>2"
+        if cond:
+            if "$" in cond.Expression and "_STATIONNAME" not in cond.Expression:
+                cond.Expression = "1>2"
 
     object.Binding.clear()
 
     # Eliminar las condiciones marcadas para eliminar
     for cond in conditions_to_remove:
-        object.IISCondition.remove(cond)
+        if cond:
+            object.IISCondition.remove(cond)
 
     # Procesar los tags después de eliminar las condiciones
     for cond in object.IISCondition:
         # Expresión regular para buscar todas las coincidencias con .PV o .MV y caracteres adicionales
-        pattern = r'\b[\w-]+\.(?:PV|MV)[\w]*\b'
-        matches = re.findall(pattern, cond.Expression)
-
-        # Iterar sobre todas las coincidencias
-        for match in matches:
-            tag1 = Tag.default()
-            tag1.Name = match
-            tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
-
-            # Verificar si el tag ya está en la lista
-            if not any(tag.Name == tag1.Name for tag in tag_list):
-                tag_list.append(tag1)
-                binding = Binding.default()
-                if ".PV" in tag1.Name:
-                    part = tag1.Name.split('.')
-                    binding.GenericName = part[0]
-                else:
-                    part = tag1.Name.split('.')
-                    binding.GenericName = part[0]
-                binding.Value = binding.GenericName
-                if not any(bindi.GenericName == binding.GenericName for bindi in object.Binding):
-                    object.Binding.append(binding)
-
-    if not object.Binding:
-        for cond in object.IISCondition:
-            # Expresión regular para encontrar el patrón deseado antes del primer punto
-            pattern = r'\b([\w-]+)\.[\w]+\b'
+        #pattern = r'\b[\w-]+\.(?:PV|MV)[\w]*\b'
+        if cond:
+            pattern = r'\b[\w$-]*STATIONNAME[\w$-]*\.(?:PV|MV)[\w]*\b'
             matches = re.findall(pattern, cond.Expression)
 
-            # Procesar cada coincidencia
             for match in matches:
-                # Crear un nuevo tag y binding
                 tag1 = Tag.default()
                 tag1.Name = match
-                tag1.HysysVar = "0@@100@@" + str(tag1.Name)
+                tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
 
-                # Verificar si el tag ya está en la lista
                 if not any(tag.Name == tag1.Name for tag in tag_list):
                     tag_list.append(tag1)
                     binding = Binding.default()
-                    binding.GenericName = tag1.Name
-                    binding.Value = tag1.Name
+                    if ".PV" in tag1.Name:
+                        part = tag1.Name.split('.')
+                        binding.GenericName = part[0]
+                    else:
+                        part = tag1.Name.split('.')
+                        binding.GenericName = part[0]
+                    binding.Value = binding.GenericName
                     if not any(bindi.GenericName == binding.GenericName for bindi in object.Binding):
                         object.Binding.append(binding)
 
-    return tag_list
+    if not object.Binding:
+        for cond in object.IISCondition:
+            if cond:
+                pattern = r'\b([\w-]+)\.[\w]+\b'
+                matches = re.findall(pattern, cond.Expression)
+
+                for match in matches:
+                    tag1 = Tag.default()
+                    tag1.Name = match
+                    tag1.HysysVar = "0@@100@@" + str(tag1.Name)
+
+                    if not any(tag.Name == tag1.Name for tag in tag_list):
+                        tag_list.append(tag1)
+                        binding = Binding.default()
+                        binding.GenericName = tag1.Name
+                        binding.Value = tag1.Name
+                        if not any(bindi.GenericName == binding.GenericName for bindi in object.Binding):
+                            object.Binding.append(binding)
+
+    return tag_list"""
 
 
 def readConditions(node, rect):

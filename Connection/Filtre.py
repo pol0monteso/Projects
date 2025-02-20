@@ -532,7 +532,7 @@ def load_units(path):
         conn.close()
 
     # Leer la tabla UnitTbl del archivo PjtRef.mdb
-    pjt_ref_file = 'PjtRef.mdb'
+    pjt_ref_file = 'PjtRef.accdb'
     pjt_ref_path = os.path.join(path, pjt_ref_file)
     conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + pjt_ref_path
     conn = pyodbc.connect(conn_str)

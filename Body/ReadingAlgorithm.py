@@ -115,13 +115,15 @@ def parse_render_transform(child, render_list):
         return child.attrib["RenderTransform"]
     return rt"""
 
-
 """def parse_fill(fill):
     match = re.search(r'Color1=([#A-Fa-f0-9]+), Color2=([#A-Fa-f0-9]+)', fill)
     return match.group(1) if match else fill"""
+
+
 def parse_fill(fill):
     match = re.search(r'Color1=([#A-Fa-f0-9a-zA-Z]+), Color2=([#A-Fa-f0-9a-zA-Z]+)', fill)
     return match.group(1) if match else fill
+
 
 """def set_common_attributes(obj, child, rt, ro, l, t, aux):
     attrs = {"Tag", "Stroke", "StrokeThickness", "Fill", "ShapeWidth", "ShapeHeight", "Canvas.Left", "Canvas.Top"}
@@ -163,7 +165,7 @@ def set_common_attributes(obj, child, ro, l, t, aux, render_list, name, tuplas_r
             "{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer.Component;assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer}ComponentProperties.Name"]
     if "Fill" in child.attrib and "Null" not in child.attrib["Fill"]:
         obj.Fill = parse_fill(child.attrib["Fill"]) if "Fill" in child.attrib else obj.Fill
-        other_color = "Transparent"
+        other_color = "#00FFFFFF"
         if "Gradient" in child.attrib["Fill"]:
             nombre_obj = obj.ShapeName
             typeYoko = child.tag.split('}', 1)[1].strip()
@@ -228,9 +230,6 @@ def set_common_attributes(obj, child, ro, l, t, aux, render_list, name, tuplas_r
             elif render_list[-1] == "-1,0,0,1,0,0" and rt == "0,-1,-1,0,0,0":
                 obj.X = float(l) - float(child.attrib["Canvas.Left"])
                 obj.Y = float(t) + float(child.attrib["Canvas.Top"])
-                """elif render_list[-1] == "1,0,0,1,0,0" and rt == "1,0,0,-1,0,0":
-                obj.X = float(l) + float(child.attrib["Canvas.Top"])
-                obj.Y = float(t) + float(child.attrib["Canvas.Left"])"""
             elif render_list[-1] == "0,-1,1,0,0,0" and rt == "1,0,0,1,0,0":
                 obj.X = float(l) - float(child.attrib["Canvas.Top"])
                 obj.Y = float(t) - float(child.attrib["Canvas.Left"])
@@ -256,8 +255,6 @@ def set_common_attributes(obj, child, ro, l, t, aux, render_list, name, tuplas_r
                 obj.X = float(l) + float(child.attrib["Canvas.Top"])
                 obj.Y = float(t) + float(child.attrib["Canvas.Left"])
             elif render_list[-1] == "0,1,1,0,0,0" and rt == "1,0,0,1,0,0":
-                """obj.X = float(l) + float(child.attrib["Canvas.Top"])
-                obj.Y = float(t) + float(child.attrib["Canvas.Left"])"""
                 obj.X = float(l) + float(child.attrib["Canvas.Top"])
                 obj.Y = float(t) + float(child.attrib["Canvas.Left"])
             elif render_list[-1] == "0,1,1,0,0,0" and rt == "1,0,0,-1,0,0":
@@ -281,16 +278,76 @@ def set_common_attributes(obj, child, ro, l, t, aux, render_list, name, tuplas_r
     elif "Canvas.Left" in child.attrib and "Canvas.Top" in child.attrib:
         obj.X = float(child.attrib["Canvas.Left"]) + float(l)
         obj.Y = float(child.attrib["Canvas.Top"]) + float(t)
-    """if aux and "Canvas.Left" in child.attrib and "Canvas.Top" in child.attrib:
-        calculateTransHelper(render, child.attrib["Canvas.Left"], l, child.attrib["Canvas.Top"], t, obj)
-    elif "Canvas.Left" in child.attrib and "Canvas.Top" in child.attrib:
-        obj.X = float(child.attrib["Canvas.Left"]) + float(l)
-        obj.Y = float(child.attrib["Canvas.Top"]) + float(t)"""
 
     if "RenderTransformOrigin" in child.attrib:
         obj.RenderTransformOrigin = child.attrib["RenderTransformOrigin"]
     else:
         obj.RenderTransformOrigin = ro
+
+
+"""IDENTITY_TRANSFORM = "1,0,0,1,0,0"
+NULL_COLOR = "#00FF0000"
+"""
+"""def set_common_attributes(obj, child, ro, l, t, aux, render_list, name, tuplas_report):
+    attrs_mapping = {
+        "ShapeWidth": lambda v: setattr(obj, "Width", str(round(float(v), 1))),
+        "ShapeHeight": lambda v: setattr(obj, "Height", str(round(float(v), 1))),
+        "Stroke": lambda v: setattr(obj, "Stroke", v if "Null" not in v else NULL_COLOR),
+        "Fill": lambda v: setattr(obj, "Fill", parse_fill(v) if "Null" not in v else NULL_COLOR)
+    }
+
+    for attr, handler in attrs_mapping.items():
+        if attr in child.attrib:
+            handler(child.attrib[attr])
+
+    for attr in {"Canvas.Left", "Canvas.Top", "Rotation", "Panel.ZIndex"}:
+        if attr in child.attrib:
+            setattr(obj, attr.replace("Canvas.", ""), child.attrib[attr])
+
+    name_key = "{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer.Component;assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer}ComponentProperties.Name"
+    obj.ShapeName = child.attrib.get(name_key, "")
+
+    if "Fill" in child.attrib and "Gradient" in child.attrib["Fill"]:
+        other_color = "Transparent"
+        nombre_obj = obj.ShapeName
+        typeYoko = child.tag.split('}', 1)[1].strip()
+        typeIIS = type(obj).__name__
+        priority = 5
+        description = f"The attribute of {typeIIS} is a gradient of the colours {other_color} and {obj.Fill}. Colour {obj.Fill} was chosen"
+        tuplas_report.append([name, nombre_obj, typeYoko, typeIIS, priority, description])
+
+    obj.RenderTransform = parse_render_transform(child, render_list)
+    if child.attrib.get("RenderTransform") == "Identity":
+        rt = sanitZero(IDENTITY_TRANSFORM)
+    else:
+        rt = sanitZero(child.attrib.get("RenderTransform", IDENTITY_TRANSFORM))
+    render = obj.RenderTransform if rt == IDENTITY_TRANSFORM else rt
+
+    if aux and "Canvas.Left" in child.attrib and "Canvas.Top" in child.attrib:
+        calculate_position(obj, render_list, rt, render, child, l, t)
+    elif "Canvas.Left" in child.attrib and "Canvas.Top" in child.attrib:
+        obj.X = float(child.attrib["Canvas.Left"]) + float(l)
+        obj.Y = float(child.attrib["Canvas.Top"]) + float(t)
+
+    obj.RenderTransformOrigin = child.attrib.get("RenderTransformOrigin", ro)
+
+
+def calculate_position(obj, render_list, rt, render, child, l, t):
+    canvas_left = float(child.attrib["Canvas.Left"])
+    canvas_top = float(child.attrib["Canvas.Top"])
+    last_render = render_list[-1] if render_list else IDENTITY_TRANSFORM
+
+    position_cases = {
+        ("-1,0,0,-1,0,0", "0,1,-1,0,0,0"): lambda: (float(l) - canvas_left, float(t) - canvas_top),
+        ("0,-1,1,0,0,0", "0,1,-1,0,0,0"): lambda: (float(l) + canvas_top, float(t) - canvas_left),
+        ("0,1,-1,0,0,0", "1,0,0,-1,0,0"): lambda: (float(l) - canvas_top, float(t) - canvas_left),
+        ("1,0,0,1,0,0", IDENTITY_TRANSFORM): lambda: (float(l) + canvas_left, float(t) + canvas_top),
+    }
+
+    if (last_render, rt) in position_cases:
+        obj.X, obj.Y = position_cases[(last_render, rt)]()
+    else:
+        calculateTransHelper(render, canvas_left, l, canvas_top, t, obj)"""
 
 
 def process_conditions(obj, child):
@@ -301,27 +358,51 @@ def process_conditions(obj, child):
         cond.Expression = re.sub(r'\b0\b', str("0,0"), condition.attrib.get("Expression", ""))
         cond.IISCondition = condition.attrib.get("Continuous", "")
         for action in condition:
-            for type in action:
-                if type.tag.endswith("ColorChange"):
+            for typeA in action:
+                if typeA.tag.endswith("ColorChange"):
                     if not colorChange:
                         colorChange = True
-                        cond.ColorC1 = type.attrib.get("Color", "")
-                        cond.ColorChangeType1 = type.attrib.get("ColorChangeType", "")
-                        if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
+                        cond.ColorC1 = typeA.attrib.get("Color", "")
+                        cond.ColorChangeType1 = typeA.attrib.get("ColorChangeType", "")
+                        if typeA.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
                             cond.ColorChangeType1 = "NormalColorChange"
-                        cond.PropertyNameCC1 = type.attrib.get("PropertyName", "")
+                        cond.PropertyNameCC1 = typeA.attrib.get("PropertyName", "")
                     else:
-                        cond.ColorC2 = type.attrib.get("Color", "")
-                        cond.ColorChangeType2 = type.attrib.get("ColorChangeType", "")
-                        if type.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
+                        cond.ColorC2 = typeA.attrib.get("Color", "")
+                        cond.ColorChangeType2 = typeA.attrib.get("ColorChangeType", "")
+                        if typeA.attrib.get("ColorChangeType", "") == "ChangeAlarmSpecificColor":
                             cond.ColorChangeType2 = "NormalColorChange"
-                        cond.PropertyNameCC2 = type.attrib.get("PropertyName", "")
-                if type.tag.endswith("Blinking"):
-                    cond.PropertyNameBLK1 = type.attrib.get("PropertyName", "")
-                    if "TypeBlinking" in type.attrib and (
-                            type.attrib["TypeBlinking"] == "AlarmSpecificBlinking" or type.attrib[
+                        cond.PropertyNameCC2 = typeA.attrib.get("PropertyName", "")
+                if typeA.tag.endswith("Set"):
+                    if typeA.attrib.get("AttributeName") == "Visibility" and typeA.attrib.get("To"):
+                        if type(obj) == Text or type(obj) == ProcessData or type(obj) == Level or type(obj) == Button:
+                            cond.ColorC1 = "#00FFFFFF"
+                            cond.ColorChangeType1 = "NormalColorChange"
+                            cond.PropertyNameCC1 = "Background"
+                            cond.ColorC2 = "#00FFFFFF"
+                            cond.ColorChangeType2 = "NormalColorChange"
+                            cond.PropertyNameCC2 = "Foreground"
+                        elif type(obj) == Line or type(obj) == PolyLine or type(obj) == Arc:
+                            cond.ColorC1 = "#00FFFFFF"
+                            cond.ColorChangeType1 = "NormalColorChange"
+                            cond.PropertyNameCC1 = "Stroke"
+                        else:
+                            cond.ColorC1 = "#00FFFFFF"
+                            cond.ColorChangeType1 = "NormalColorChange"
+                            cond.PropertyNameCC1 = "Stroke"
+                            cond.ColorC2 = "#00FFFFFF"
+                            cond.ColorChangeType2 = "NormalColorChange"
+                            cond.PropertyNameCC2 = "Fill"
+
+                if typeA.tag.endswith("Blinking"):
+                    cond.PropertyNameBLK1 = typeA.attrib.get("PropertyName", "")
+                    if "TypeBlinking" in typeA.attrib and (
+                            typeA.attrib["TypeBlinking"] == "AlarmSpecificBlinking" or typeA.attrib[
                         "TypeBlinking"] == "Yes") and cond.PropertyNameBLK1 != "":
-                        cond.ColorB1 = "Red"
+                        """cond.ColorB1 = "FindColor"
+                        cond.BlinkingType1 = "Yes"
+                        """
+                        cond.ColorB1 = cond.ColorC1
                         cond.BlinkingType1 = "Yes"
 
                     obj.IISCondition.append(cond)
@@ -336,6 +417,7 @@ def process_bindings(obj, child):
         """ or "TagInventat_" + ''.join(
             random.choices(string.ascii_uppercase + string.digits, k=5))"""
         obj.Binding.append(bind)
+
 
 def read_tag_and_binding_DataCharacter(obj, child):
     bind = child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.GenericName;assembly'
@@ -362,12 +444,11 @@ def readText(child, l, t, rt, ro, aux, render_list, name, tuplas_report):
         else:
             text1.Text = matches[0]
 
-
     attrib = child.attrib
     text1.FontSize = attrib.get("FontSize", "")
     text1.FontFamily = attrib.get("FontFamily", "")
     if "Foreground" in child.attrib and "Null" not in child.attrib["Foreground"]:
-        text1.Background = attrib.get("Foreground", "")
+        text1.Foreground = attrib.get("Foreground", "")
     else:
         text1.Foreground = "#00FF0000"
     if "Background" in child.attrib and "Null" not in child.attrib["Background"]:
@@ -428,6 +509,8 @@ def readText(child, l, t, rt, ro, aux, render_list, name, tuplas_report):
                 "TypeBlinking"] == "Yes") and cond.PropertyNameBLK1 != "":
                 cond.ColorB1 = "Red"
                 cond.BlinkingType1 = "Yes"""
+
+
 def read_conditions_alarms(child, obj):
     for condition in child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel'
                                    ';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}Condition'):
@@ -543,13 +626,13 @@ def readDataCharacter(child, l, t, rt, ro, aux, render_list, name, tuplas_report
 
     #data_char.GenericName = bind.attrib.get("Value", "")
     #binding = child.find('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel'
-                         #';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}SimpleDataLink')
+    #';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}SimpleDataLink')
     #data_char.Value = binding.attrib.get("Value", "")
     #data_char.Value = binding.attrib.get("Value", "")
 
     for binding in child.findall('.//{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel'
-                         ';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}SimpleDataLink'):
-            data_char.Value = binding.attrib.get("Value", "")
+                                 ';assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.DataLink.DataModel}SimpleDataLink'):
+        data_char.Value = binding.attrib.get("Value", "")
 
     content = data_char.Value
     data_list = content.split('.')
@@ -763,7 +846,6 @@ def init_polyline(child, l, t, ro, aux, render_list, name, tuplas_report):
     return line
 
 
-#TODO: ATRIBUTS SENSE SENTIT TENEN EL XML
 def init_level(child, l, t, ro, aux, render_list, name, tuplas_report):
     level = Level.default()
     set_common_attributes(level, child, ro, l, t, aux, render_list, name, tuplas_report)
@@ -809,12 +891,16 @@ def init_level(child, l, t, ro, aux, render_list, name, tuplas_report):
         if "LowLimit" in datalink.attrib.get("AlternateValue", ""):
             if datalink.attrib.get("Value", "") == "":
                 level.LevelValue1 = 0
-            elif "SL" in datalink.attrib.get("Value", "") or "LO" in datalink.attrib.get("Value", "") or "ML" in datalink.attrib.get("Value", ""):
+            elif "SL" in datalink.attrib.get("Value", "") or "LO" in datalink.attrib.get("Value",
+                                                                                         "") or "ML" in datalink.attrib.get(
+                "Value", ""):
                 level.LevelValue1 = datalink.attrib.get("Value", "")
         elif "HighLimit" in datalink.attrib.get("AlternateValue", ""):
             if datalink.attrib.get("Value", "") == "":
                 level.LevelValue2 = 100
-            elif "SH" in datalink.attrib.get("Value", "") or "HI" in datalink.attrib.get("Value", "") or "MH" in datalink.attrib.get("Value", ""):
+            elif "SH" in datalink.attrib.get("Value", "") or "HI" in datalink.attrib.get("Value",
+                                                                                         "") or "MH" in datalink.attrib.get(
+                "Value", ""):
                 level.LevelValue2 = datalink.attrib.get("Value", "")
         elif datalink.attrib.get("Value", ""):
             data_char.GenericName = data_char.Value = datalink.attrib.get("Value", "")
@@ -858,73 +944,64 @@ def init_level(child, l, t, ro, aux, render_list, name, tuplas_report):
 
                 if var_type:
                     data_char.Value = data_char.Value.replace(var_type, target_value)"""
-
+    process_conditions(level, child)
+    process_bindings(level, child)
     return level
+
 
 def readRect_rec(node, l, t, rt, ro, aux, tag_list, object_list, render_list, name, tuplas_report):
     for child in node:
         tag = child.tag
         if tag.endswith("IPCSRectangle"):
-            print("Reading RECT")
             rect1 = initRectangles(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(rect1, None, tag_list, object_list)
         elif tag.endswith("IPCSSector"):
-            print("Reading SECTOR")
             sect1 = initSector(child, l, t, ro, aux, False, render_list, name, tuplas_report)
             update_tags_and_lists(sect1, None, tag_list, object_list)
         elif tag.endswith("IPCSArc"):
-            print("Reading ARC")
             arc1 = initSector(child, l, t, ro, aux, True, render_list, name, tuplas_report)
             update_tags_and_lists(arc1, None, tag_list, object_list)
         elif tag.endswith("IPCSEllipse") or tag.endswith("IPCSCircle"):
-            print("Reading ELLIPSE")
             elip = initEllipse(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(elip, None, tag_list, object_list)
         elif tag.endswith("Text"):
-            print("Reading TEXT")
             text = readText(child, l, t, rt, ro, aux, render_list, name, tuplas_report)
             text.ZIndex = child.attrib["Panel.ZIndex"]
             update_tags_and_lists(text, None, tag_list, object_list)
         elif tag.endswith("GroupComponent"):
-            print("GROUP")
             zindex = child.attrib["Panel.ZIndex"]
             initGroupComp(child, l, t, rt, ro, aux, tag_list, object_list, render_list, name, tuplas_report)
         elif tag.endswith("IPCSFillArea"):
-            print("Reading FILLAREA")
             poly1 = initFillArea(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(poly1, None, tag_list, object_list)
         elif tag.endswith("IPCSPolyLine"):
-            print("Reading LINE")
             line = init_polyline(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(line, None, tag_list, object_list)
         elif tag.endswith("IPCSLine"):
-            print("Reading LINE")
             line = initLine(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(line, None, tag_list, object_list)
         elif tag.endswith("ProcessDataCharacter"):
-            print("Reading DATA")
             text = readDataCharacter(child, l, t, rt, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(text, None, tag_list, object_list)
-        elif tag.endswith("PenTool"):
-            nombre_obj = child.attrib[("{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer"
-                                       ".Component;assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.Builder"
-                                       ".Designer}ComponentProperties.Name")]
-            typeYoko = "IPCSPenTool"
-            typeIIS = "None"
-            priority = 10
-            description = "Non-emulated Yokogawa object. IIS does not have PenTool object to add to the screen."
-            tuplas_report.append([name, nombre_obj, typeYoko, typeIIS, priority, description])
-        elif tag.endswith("Marker"):
-            nombre_obj = child.attrib[("{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer"
-                                       ".Component;assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.Builder"
-                                       ".Designer}ComponentProperties.Name")]
-            typeYoko = "IPCSMarker"
-            typeIIS = "None"
-            priority = 10
-            description = "Non-emulated Yokogawa object. IIS does not have Marker object to add to the screen."
-            tuplas_report.append([name, nombre_obj, typeYoko, typeIIS, priority, description])
+            """elif tag.endswith("PenTool"):
+                nombre_obj = child.attrib[("{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer"
+                                           ".Component;assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.Builder"
+                                           ".Designer}ComponentProperties.Name")]
+                typeYoko = "IPCSPenTool"
+                typeIIS = "None"
+                priority = 10
+                description = "Non-emulated Yokogawa object. IIS does not have PenTool object to add to the screen."
+                tuplas_report.append([name, nombre_obj, typeYoko, typeIIS, priority, description])
+            elif tag.endswith("Marker"):
+                nombre_obj = child.attrib[("{clr-namespace:Yokogawa.IA.iPCS.Platform.View.Graphic.Builder.Designer"
+                                           ".Component;assembly=Yokogawa.IA.iPCS.Platform.View.Graphic.Builder"
+                                           ".Designer}ComponentProperties.Name")]
+                typeYoko = "IPCSMarker"
+                typeIIS = "None"
+                priority = 10
+                description = "Non-emulated Yokogawa object. IIS does not have Marker object to add to the screen."
+                tuplas_report.append([name, nombre_obj, typeYoko, typeIIS, priority, description])"""
         elif tag.endswith("PushButton"):
-            print("Reading BUTTON")
             button = readButton(child, l, t, ro, aux, render_list, name, tuplas_report)
             if button:
                 process_bindings(button, child)
@@ -938,11 +1015,9 @@ def readRect_rec(node, l, t, rt, ro, aux, tag_list, object_list, render_list, na
                 update_tags_and_lists(button, None, tag_list, object_list)
                 """object_list.append(button)"""
         elif tag.endswith("ProcessDataBar"):
-            print("Reading LEVEL")
             level = init_level(child, l, t, ro, aux, render_list, name, tuplas_report)
             update_tags_and_lists(level, None, tag_list, object_list)
         elif tag.endswith("TouchTarget"):
-            print("Reading TARGET")
             touch = readTouch(child, l, t, ro, aux, render_list, name, tuplas_report, tag_list)
             if touch:
                 object_list.append(touch)
@@ -1014,7 +1089,6 @@ def readButton(child, l, t, ro, aux, render_list, name, tuplas_report):
                 button.FunctionType = "instrumentCommand"
                 button.DataTag = txt_data
                 button.CommandData = command_data
-
 
 
 def readTouch(child, l, t, ro, aux, render_list, name, tuplas_report, tag_list):
@@ -1121,6 +1195,7 @@ def force_zindex(zindex_list, zindexGroup):
 
     return tag_list"""
 
+
 def readTags(object):
     tag_list = []
     binding_dict = {}
@@ -1134,7 +1209,7 @@ def readTags(object):
                     if "$_STATIONNAME" not in bind.GenericName and bind.Value != "":
                         cond.Expression = cond.Expression.replace(bind.GenericName, bind.Value)
             if "$" in cond.Expression and "$_STATIONNAME" not in cond.Expression:
-                cond.Expression = "1<2"
+                cond.Expression = "1>2"
             if "$_STATIONNAME" in cond.Expression:
                 pattern = r'\b[\w$-]*STATIONNAME[\w$-]*\.(?:PV|MV)[\w]*\b'
                 matches = re.findall(pattern, cond.Expression)
@@ -1145,7 +1220,7 @@ def readTags(object):
                     tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
                     if not any(tag.Name == tag1.Name for tag in tag_list):
                         tag_list.append(tag1)
-            pattern = r'\b[\w-]+\.(?:PV|MV|MODE|CMOD|OMOD|#PV|ALRM)[\w]*\b'
+            pattern = r'\b[\w-]+\.(?:PV|MV|MODE|CMOD|OMOD|#PV|ALRM|AOFS|AFLS)[\w]*\b'
             matches = re.findall(pattern, cond.Expression)
             for match in matches:
                 if match != "_STATIONNAME.PV":
@@ -1161,6 +1236,8 @@ def readTags(object):
         bind.GenericName = bind.Value = value
         object.Binding.append(bind)
     return tag_list
+
+
 """def readTags(object):
     tag_list = []
     conditions_to_remove = []

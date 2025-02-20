@@ -43,8 +43,7 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
         total = len(os.listdir(directorio))
     for archivo in os.listdir(directorio):
         if filter_list and "Ex" not in filter_list[0]:
-            #if (archivo.startswith(tuple(filter_list))) and archivo.endswith('.xaml'):
-            if (archivo.startswith("PRO") or archivo.startswith("PSD")) and archivo.endswith('.xaml'):
+            if (archivo.startswith(tuple(filter_list))) and archivo.endswith('.xaml'):
                 point = archivo.find('.')
                 ruta_archivo = os.path.join(directorio, archivo)
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -222,17 +221,17 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
     os.system(f"start notepad++ project.xml")
 
 
-"""test_emulation(
+test_emulation(
     r"\\192.168.1.243\DCSsupport\Yokogawa\ConversionIIS\1.PROJECTS\220124_BAPCO_OTSReplacement_LFSO_Complex\4.ALARMS\CAMSAlm-CENTUM.csv",
     r"C:\BAPCO",
     r"\\192.168.1.243\DCSsupport\Yokogawa\ConversionIIS\1.PROJECTS\220124_BAPCO_OTSReplacement_LFSO_Complex\2.TUNINGPARAMETERS",
     r"\\192.168.1.243\DCSsupport\Yokogawa\ConversionIIS\1.PROJECTS\220124_BAPCO_OTSReplacement_LFSO_Complex\3.FCS&SCS DB",
     ""
-)"""#xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
-test_emulation(
+)#xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
+"""test_emulation(
     r'C:\Emulation\HMIscreensYOKOGAWA\Source\CAMSAlm-CENTUM.csv',
     r"C:\Emulation\HMIscreensYOKOGAWA",
     r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters',
     r'C:\Emulation\HMIscreensYOKOGAWA\Source',
     ""
-)
+)"""

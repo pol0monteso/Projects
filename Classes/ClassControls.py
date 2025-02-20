@@ -297,6 +297,7 @@ class Arc:
                    IISCondition=[], Binding=[], Rotation=0, StartAngle="", EndAngle="", ZIndex=0, ZIndexGroup=0)
 
 
+
 class PolyLine:
     def __init__(self, Width, Height, X, Y, ShapeName, Fill, Stroke, StrokeThickness, Name, Tag,
                  RenderTransform, RenderTransformOrigin, IISCondition, Binding, Points, Rotation, ZIndex, ZIndexGroup):

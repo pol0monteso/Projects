@@ -19,7 +19,6 @@ def indent(elem, level=0):
             elem.tail = i
 
 
-
 def force_condition(expression, binding):
     replacements = {
         '.#PV == "CAL"': '2<1',
@@ -141,15 +140,14 @@ def force_condition(expression, binding):
         '.MODE=="AUT IMAN"': '2<1'
     }
 
-
     tag = binding.split('.')[0]
     if tag:
         for key, value in replacements.items():
-            if tag+key in expression:
-                expression = expression.replace(tag+key, value)
+            if tag + key in expression:
+                expression = expression.replace(tag + key, value)
     else:
         for key, value in replacements.items():
-            expression = expression.replace(binding+key, value)
+            expression = expression.replace(binding + key, value)
 
     return expression
 
@@ -364,6 +362,7 @@ def forceCondition(cond, binding):
     if '""' in cond.Expression:
         cond.Expression = "False"
 
+
 def change_condition(expression):
     replacements = {
         '"CAL"': '16777216',
@@ -389,14 +388,17 @@ def change_condition(expression):
         '"PRD"': '1048576',
         '"CAS"': '2097152',
         '"RCAS"': '524288',
-        '"TRK"' : '67108864',
-        '"OOS"': '2147483648'
-
+        '"TRK"': '67108864',
+        '"OOS"': '2147483648',
+        '"ROUT"': '262144',
+        '"AOF"': '1073741824',
+        '"AFL"': '2147516416'
     }
     for key, value in replacements.items():
         expression = expression.replace(key, value)
 
     return expression
+
 
 def filtrar_y_separar(cadena):
     # Separar la cadena por espacios
@@ -416,6 +418,7 @@ def filtrar_y_separar(cadena):
                 resultado.append(s)
 
     return resultado
+
 
 """def filtrar_y_separar(cadena):
     # Separar la cadena por espacios
@@ -484,6 +487,7 @@ def matrix_to_string(matrix):
 
     return s
 
+
 def FlipRotationMode(value):
     mode_map = {
         '-1,0,0,1,0,0': "FH",
@@ -500,6 +504,7 @@ def FlipRotationMode(value):
 
 def orderByZIndex(object_list):
     return sorted(object_list, key=lambda object1: int(object1.ZIndex))
+
 
 def calculateTransHelper(rt_value, cl, l, ct, t, rect):
     """mode_map = {
@@ -518,8 +523,8 @@ def calculateTransHelper(rt_value, cl, l, ct, t, rect):
         "RR": lambda: (float(l) - float(ct), float(t) - float(cl)),
         "Identity": lambda: (float(l) + float(cl), float(t) + float(ct)),
         "RL+": lambda: (float(l) - float(ct), float(t) + float(cl)),
-        "RL": lambda: (float(l) - float(ct), float(t) + float(cl)), #float(l) + float(cl), float(t) + float(ct)
-        "FV": lambda: (float(l) + float(cl), float(t) - float(ct)) #float(t) + float(ct))
+        "RL": lambda: (float(l) - float(ct), float(t) + float(cl)),  #float(l) + float(cl), float(t) + float(ct)
+        "FV": lambda: (float(l) + float(cl), float(t) - float(ct))  #float(t) + float(ct))
     }
 
     mode = FlipRotationMode(rt_value)
@@ -646,4 +651,3 @@ def calculateTransHelper2(rt_value, cl, l, ct, t):
     if mode in mode_map:
         return mode_map[mode]()
     return mode_map["Identity"]()
-

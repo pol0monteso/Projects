@@ -418,7 +418,7 @@ def parse_folder(filter_list, directorio, tuning_params, database_path, ventana,
         total = len(folder_filter)
     for xaml_folder in folder_filter:
         # Obtener el nombre de la carpeta hasta ~EDF
-        folder_name = xaml_folder.split('~EDF')[0]  # Extrae todo hasta la cadena ~EDF
+        folder_name = xaml_folder.split('~EDF')[0]
 
         folder_path = os.path.join(directorio, xaml_folder)
         for xaml_file in os.listdir(folder_path):

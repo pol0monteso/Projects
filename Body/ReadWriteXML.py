@@ -1,7 +1,11 @@
+import uuid
 import xml.etree.ElementTree as ET
+
+from Classes import LogicClass
 from Classes.LogicClass import *
 from Body.ReadingAlgorithm import readRect_rec
 from Utils.Utils import *
+
 
 def indent(elem, level=0):
     i = "\n" + level * "    "
@@ -50,7 +54,8 @@ def writeTags(tag_list, tags, project_tree, tagName_list):
     tagName_set = set(tagName_list)
 
     # Criterios de coincidencia de nombres de tag
-    primary_conditions = [".PV", ".MV", "SCALE", ".#PV", ".ALRM", ".MODE", ".CMOD", ".OMOD", "."]
+    primary_conditions = [".PV", ".MV", "SCALE", ".#PV", ".ALRM", ".MODE", ".CMOD", ".OMOD", ".", ".SH", ".SL", ".HH",
+                          ".LL"]
     secondary_conditions = [".ALMPV"]
 
     if tag_list:
@@ -76,13 +81,16 @@ def writeTags(tag_list, tags, project_tree, tagName_list):
                     IsMaster="True",
                     HysysVar=hysys_var,
                     NumDecimals=str(getattr(t, "NumDecimals", "")),
-                    HysysVarUnit=str(getattr(t, "HysysVarUnit", ""))
+                    HysysVarUnit=str(getattr(t, "HysysVarUnit", "")),
+                    DefaultValue=str(getattr(t, "DefaultValue", ""))
                 )
                 # Agregar a la lista de nombres de tags
                 tagName_set.add(tag_name)
 
     # Actualizamos la lista original (convertimos el conjunto de vuelta a lista)
     tagName_list[:] = list(tagName_set)
+
+
 """def writeTags(tag_list, tags, project_tree, tagName_list):
     if tag_list:
         for t in tag_list:
@@ -141,6 +149,350 @@ def initScreen(root, project, windows, project_tree, tags, name, tagName_list, u
     return tuples, window_dict, touch_list, tag_list
 
 
+def build_faceplate(tag, alarmsPriority_dict, touch):
+    prefix_tag = tag
+    hh_color = alarmsPriority_dict[prefix_tag + ".HH"][1]
+    hi_color = alarmsPriority_dict[prefix_tag + ".HI"][1]
+    li_color = alarmsPriority_dict[prefix_tag + ".LI"][1]
+    ll_color = alarmsPriority_dict[prefix_tag + ".LL"][1]
+    controller = ET.SubElement(touch.Window, "Controller",
+                               Width=touch.Width,
+                               Height=touch.Height,
+                               X=touch.X,
+                               Stroke="Transparent",
+                               Fill="Transparent",
+                               ShapeName="",
+                               Header="",
+                               Footer="",
+                               FacePlateBackground="Transparent")
+    CustomFacePlate = ET.SubElement(controller, "customFacePlate")
+    window = ET.SubElement(CustomFacePlate, "Window",
+                           WindowWidth="143",
+                           WindowHeight="707",
+                           Background="#FFC0C0C0",
+                           MainWindow="False",
+                           ID=str(uuid.uuid4()))
+    ET.SubElement(window, "Rectangle",
+                  Width="0.968531468531468",
+                  Height="0.112022630834512",
+                  X="0.013986013986014",
+                  Y="0.0933521923620933",
+                  ShapeName="ln_0",
+                  Fill="#FF000000",
+                  Stroke="#FF000000",
+                  StrokeThickness="1",
+                  Group="")
+    ET.SubElement(window, "Rectangle",
+                  Width="138.5",
+                  Height="45.66",
+                  X="2",
+                  Y="138.5",
+                  ShapeName="ln_1",
+                  Fill="Black",
+                  Stroke="Black",
+                  StrokeThickness="1",
+                  Group="")
+    ET.SubElement(window, "Rectangle",
+                  Width="0.974908308474742",
+                  Height="0.0854314002828853",
+                  X="0.013986013986014",
+                  Y="0.912305516265912",
+                  ShapeName="ln_2",
+                  Fill="#00FFFFFF",
+                  Stroke="#FF000000",
+                  StrokeThickness="1",
+                  Group="")
+
+    ET.SubElement(window, "Rectangle",
+                  Width="0.268531468531468",
+                  Height="0.428854314002829",
+                  X="0.307692307692308",
+                  Y="337.2",
+                  ShapeName="Background",
+                  Fill="Black",
+                  Stroke="Black",
+                  StrokeThickness="1",
+                  Group="")
+    """ET.SubElement(window, "DynamicLevel",
+                  ShapeName="lv_0",
+                  X="0.335664335664336",
+                  Y="0.383309759547383",
+                  Width="0.142657342657342",
+                  Height="0.411315417256012",
+                  Group="",
+                  Tag="",
+                  LevelFill1="#00FFFFFF",
+                  LevelFill2="#00FFFFFF",
+                  LevelValue1="0",
+                  LevelValue2="0",
+                  Orientation="Vertical",
+                  MinValue="0",
+                  MaxValue="0",
+                  Fill="#FF000000",
+                  Stroke="#FF000000",
+                  RenderTransform="Identity",
+                  RenderTransformOrigin="0,0")"""
+    ET.SubElement(window, "LabelText",
+                  Width="0.318881118881122",
+                  Height="0.031966053748232",
+                  X="0.65034965034965",
+                  Y="0.362093352192362",
+                  ShapeName="lb_0",
+                  Foreground="#FF000000",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Format="",
+                  Content="100",
+                  FontAutoSize="True",
+                  FontSize="12",
+                  FontFamily="Consolas",
+                  TextAlign="Right",
+                  Alarm="",
+                  Alarm2="",
+                  Angle="0",
+                  CenterX="0.5",
+                  CenterY="0.5",
+                  Group="")
+
+    ET.SubElement(window, "LabelText",
+                  Width="0.318881118881119",
+                  Height="0.031966053748232",
+                  X="0.65034965034965",
+                  Y="0.444130127298444",
+                  ShapeName="lb_1",
+                  Foreground="#FF000000",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Format="",
+                  Content="80",
+                  FontAutoSize="True",
+                  FontSize="12",
+                  FontFamily="Consolas",
+                  TextAlign="Right",
+                  Alarm="",
+                  Alarm2="",
+                  Angle="0",
+                  CenterX="0.5",
+                  CenterY="0.5",
+                  Group="")
+
+    ET.SubElement(window, "LabelText",
+                  Width="0.318881118881119",
+                  Height="0.031966053748232",
+                  X="0.65034965034965",
+                  Y="0.526166902404526",
+                  ShapeName="lb_2",
+                  Foreground="#FF000000",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Format="",
+                  Content="60",
+                  FontAutoSize="True",
+                  FontSize="12",
+                  FontFamily="Consolas",
+                  TextAlign="Right",
+                  Alarm="",
+                  Alarm2="",
+                  Angle="0",
+                  CenterX="0.5",
+                  CenterY="0.5",
+                  Group="")
+
+    ET.SubElement(window, "LabelText",
+                  Width="0.318881118881119",
+                  Height="0.031966053748232",
+                  X="0.65034965034965",
+                  Y="0.60961810466761",
+                  ShapeName="lb_3",
+                  Foreground="#FF000000",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Format="",
+                  Content="40",
+                  FontAutoSize="True",
+                  FontSize="12",
+                  FontFamily="Consolas",
+                  TextAlign="Right",
+                  Alarm="",
+                  Alarm2="",
+                  Angle="0",
+                  CenterX="0.5",
+                  CenterY="0.5",
+                  Group="")
+
+    ET.SubElement(window, "LabelText",
+                  Width="0.318881118881119",
+                  Height="0.031966053748232",
+                  X="0.65034965034965",
+                  Y="0.691654879773692",
+                  ShapeName="lb_4",
+                  Foreground="#FF000000",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Format="",
+                  Content="20",
+                  FontAutoSize="True",
+                  FontSize="12",
+                  FontFamily="Consolas",
+                  TextAlign="Right",
+                  Alarm="",
+                  Alarm2="",
+                  Angle="0",
+                  CenterX="0.5",
+                  CenterY="0.5",
+                  Group="")
+
+    ET.SubElement(window, "LabelText",
+                  Width="0.318881118881119",
+                  Height="0.031966053748232",
+                  X="0.65034965034965",
+                  Y="0.769448373408769",
+                  ShapeName="lb_5",
+                  Foreground="#FF000000",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Format="",
+                  Content="0",
+                  FontAutoSize="True",
+                  FontSize="12",
+                  FontFamily="Consolas",
+                  TextAlign="Right",
+                  Alarm="",
+                  Alarm2="",
+                  Angle="0",
+                  CenterX="0.5",
+                  CenterY="0.5",
+                  Group="")
+    dinamicRect1 = ET.SubElement(window, "DinamicRectangle",
+                                 ShapeName="COLOR",
+                                 X="0.216783216783217",
+                                 Y="0.0961810466760962",
+                                 Width="0.106293706293708",
+                                 Height="0.0282885431400283",
+                                 Group="",
+                                 Fill="#FFFFFFFF",
+                                 Stroke="#00FFFFFF",
+                                 StrokeThickness="1",
+                                 RenderTransform="Identity",
+                                 RenderTransformOrigin="0,0",
+                                 Rotation="0")
+    cond_list = ET.SubElement(dinamicRect1, "ConditionsList")
+    ET.SubElement(cond_list, "IISCondition",
+                  Expression=str(tag + ".AOFS==1073741824"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1="#FF0000FF",
+                  PropertyNameCC1="Fill",
+                  PropertyNameBLK1="Fill")
+    ET.SubElement(cond_list, "IISCondition",
+                  Expression=str(tag + ".ALRM==524288"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(hh_color),
+                  PropertyNameCC1="Fill",
+                  PropertyNameBLK1="Fill",
+                  ColorB1="Red",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list, "IISCondition",
+                  Expression=str(tag + ".ALRM==32768"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(hi_color),
+                  PropertyNameCC1="Fill",
+                  PropertyNameBLK1="Fill",
+                  ColorB1=str(hi_color),
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list, "IISCondition",
+                  Expression=str(tag + ".ALRM==16384"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(li_color),
+                  PropertyNameCC1="Fill",
+                  PropertyNameBLK1="Fill",
+                  ColorB1=str(li_color),
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list, "IISCondition",
+                  Expression=str(tag + ".ALRM==262144"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(ll_color),
+                  PropertyNameCC1="Fill",
+                  PropertyNameBLK1="Fill",
+                  ColorB1=str(ll_color),
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list, "IISCondition",
+                  Expression="1==1",
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1="#00ff00",
+                  PropertyNameCC1="Fill",
+                  PropertyNameBLK1="Fill",
+                  ColorB1=str(ll_color),
+                  BlinkingType1="Yes")
+    bind_list = ET.SubElement(dinamicRect1, "BindingList")
+    ET.SubElement(bind_list, "Binding",
+                  GenerigName=str(tag + ".AOFS"),
+                  Value=str(tag + ".AOFS"))
+    ET.SubElement(bind_list, "Binding",
+                  GenerigName=str(tag + ".ALRM"),
+                  Value=str(tag + ".ALRM"))
+    ET.SubElement(bind_list, "Binding",
+                  GenerigName=str(tag + ".AFLS"),
+                  Value=str(tag + ".AFLS"))
+    # Crear el primer DynamicText (text_1294)
+    dynamic_text_1294 = ET.SubElement(window, "DynamicText",
+                                      ShapeName="text_1294",
+                                      X="0.034965034965035",
+                                      Y="0.124469589816124",
+                                      Width="NaN",
+                                      Height="NaN",
+                                      Group="",
+                                      Background="#00FFFFFF",
+                                      Foreground="Cyan",
+                                      Text="MODE",
+                                      FontSize="17",
+                                      FontFamily="Consolas",
+                                      HorizontalAlignment="Stretch",
+                                      ScaleX="1",
+                                      ScaleY="1",
+                                      RenderTransform="Identity",
+                                      RenderTransformOrigin="0,0",
+                                      FontWeight="Normal")
+
+    # Añadir ConditionsList al DynamicText 1294
+    cond_list_1294 = ET.SubElement(dynamic_text_1294, "ConditionsList")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==262144",
+                  ReplaceText="True", Text="ROUT")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==524288",
+                  ReplaceText="True", Text="RCAS")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==1048576",
+                  ReplaceText="True", Text="PRD")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==2097152",
+                  ReplaceText="True", Text="CAS")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==4194304",
+                  ReplaceText="True", Text="AUT")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==8388608",
+                  ReplaceText="True", Text="MAN")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==16777216",
+                  ReplaceText="True", Text="SEMI")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==67108864",
+                  ReplaceText="True", Text="TRK")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==134217728",
+                  ReplaceText="True", Text="IMAN")
+    ET.SubElement(cond_list_1294, "IISCondition",
+                  Expression="65TI440.MODE==2147483648",
+                  ReplaceText="True", Text="OOS")
+
+    # Añadir BindingList al DynamicText 1294
+    bind_list_1294 = ET.SubElement(dynamic_text_1294, "BindingList")
+    ET.SubElement(bind_list_1294, "Binding",
+                  GenericName="65TI440.MODE",
+                  Value="65TI440.MODE")
+
+
 def writeObjects(object_list, window, project_tree, size, tag_list, units, alarms, alarms_dict, windows_dict,
                  alarmPriority_dict):
     shape_name_map = {
@@ -192,6 +544,7 @@ def find_color_blinking(tag, alarmPriority):
         return alarmPriority[tag][-1]
     return None
 
+
 def writeShape(object, shape_type, window, project_tree, alarmPriority_dict):
     shape_element = ET.SubElement(window, shape_type,
                                   Width=str(object.Width),
@@ -207,9 +560,10 @@ def writeShape(object, shape_type, window, project_tree, alarmPriority_dict):
                                   Rotation=str(object.Rotation))
 
     indent(shape_element)
+    writePoints(object, shape_element)
     writeCondition(object, shape_element, project_tree, alarmPriority_dict)
     writeBinding(object, shape_element, project_tree)
-    writePoints(object, shape_element)
+
 
     # Solo escribir el archivo una vez después de procesar todos los elementos
     # Esto evita múltiples escrituras durante el procesamiento
@@ -387,7 +741,7 @@ def write_level(object, window, project_tree, tag_list, units, alarmPriority_dic
                         tag1.ID = uuid.uuid4()
                         object.LevelTag = tag1.ID
                         tag1.Name = str(object.binding_dic[bind]) + '.' + str(type_scale)
-                        print(tag1.Name +f"------X:{object.X}-----Y:{object.Y}")
+                        print(tag1.Name + f"------X:{object.X}-----Y:{object.Y}")
                         tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
                         if tag1.Name == "." + str(type_scale):
                             write = False
@@ -471,7 +825,7 @@ def write_level(object, window, project_tree, tag_list, units, alarmPriority_dic
                                   Orientation=str(object.Orientation),
                                   LevelValue1=str(object.LevelValue1),
                                   LevelValue2=str(object.LevelValue2),
-                                  Tag=str(object.LevelTag),
+                                  LevelTag=str(object.LevelTag),
                                   MinValue=str(object.LevelValue1),
                                   MaxValue=str(object.LevelValue2),
                                   RenderTransform=object.RenderTransform,
@@ -480,6 +834,7 @@ def write_level(object, window, project_tree, tag_list, units, alarmPriority_dic
                                   )
     writeCondition(object, level_element, project_tree, alarmPriority_dict)
     writeBinding(object, level_element, project_tree)
+
 
 def writeDataCharacter(object, window, tag_list, units, project_tree, alarmPriority_dict):
     write = True
@@ -615,7 +970,7 @@ def writeTextElement(text_obj, window, units, tag_list, alarms, project_tree, al
         newBind.Value = newBind.GenericName = bind.GenericName
         for cond in text_obj.IISCondition:
             #if (str(bind.Value) + '.ALRM<>"LL"') == cond.Expression:
-            if (str(bind.Value)+'<>"LL"') == cond.Expression:
+            if (str(bind.Value) + '<>"LL"') == cond.Expression:
                 lista = check_alarm(units, bind.Value, "LL", window.attrib["ID"])
                 if len(lista) == 2:
                     if lista[1].Name not in alarms_dict:
@@ -725,12 +1080,6 @@ def writeAlarm(alarm, alarms):
                             Screen=alarm.Screen,
                             Priority=alarm.Priority)
     indent(element)
-
-
-def write1Text(text_obj, window, project_tree, units, tag_list, alarm_list):
-    text_element = writeTextElement(text_obj, window, units, tag_list, alarm_list, project_tree)
-    indent(text_element)
-    project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)
 
 
 """def writeText(text_list, window, project_tree):
@@ -887,7 +1236,7 @@ def writeCondition(rect, rect_label, project_tree, alarmPriority_dict):
             if not ((cond.ColorC1 == "" and cond.ColorB1 == "" and cond.ReplaceText == "False") or
                     (cond.Expression == "2<1,0" or cond.Expression == "2<1,0 and 2<1,0" or cond.Expression == "2<1,0 "
                                                                                                               "or "
-                                                                               "2<1,0")):
+                                                                                                              "2<1,0")):
                 # TODO: DEBUG
                 if cond.ColorB1 == "FindColor":
                     for bind in rect.Binding:
@@ -937,3 +1286,671 @@ def writeCondition(rect, rect_label, project_tree, alarmPriority_dict):
                                           )
             indent(condList)
         """project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)"""
+
+
+def faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list):
+    from Body.Faceplate import find_faceplate_tags
+    """id = ""
+    for tag1 in tag_list:
+        if tag1.Name == str(prefix_tag + ".PV"):
+            id = tag1.ID
+    tag_ALRM = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.ALRM", HysysVar=f"@@@@{prefix_tag}.ALRM", NumDecimals=3,
+                   UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=0)
+    tag_MODE = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.MODE", HysysVar=f"@@@@{prefix_tag}.MODE", NumDecimals=3,
+                   UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=0)
+    tag_AFLS = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.AFLS", HysysVar=f"@@@@{prefix_tag}.AFLS", NumDecimals=3,
+                   UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=0)
+    tag_AOFS = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.AOFS", HysysVar=f"@@@@{prefix_tag}.AOFS", NumDecimals=3,
+                   UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=0)
+    tag__PV = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.#PV", HysysVar=f"@@@@{prefix_tag}.#PV", NumDecimals=3,
+                  UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=0)
+
+    new_tag = [tag_MODE, tag_ALRM, tag_AFLS, tag_AOFS, tag__PV]
+
+    hh_color = str(alarmsPriority_dict.get(prefix_tag + ".HH", [None, None])[1])
+    hi_color = str(alarmsPriority_dict.get(prefix_tag + ".HI", [None, None])[1])
+    li_color = str(alarmsPriority_dict.get(prefix_tag + ".LO", [None, None])[1])
+    ll_color = str(alarmsPriority_dict.get(prefix_tag + ".LL", [None, None])[1])
+    high_value = float(units[prefix_tag]["SH"])
+    low_value = float(units[prefix_tag]["SL"])
+    ph_value = float(units[prefix_tag]["PH"])
+    pl_value = float(units[prefix_tag]["PL"])
+    puntos = [low_value + i * (high_value - low_value) / (6 - 1) for i in range(6)]
+    if hh_color is None:
+        hh_color = hi_color
+    tag_HH = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.HH", HysysVar=f"@@@@{prefix_tag}.HH", NumDecimals=3,
+                 UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=units[prefix_tag]["HH"])
+    tag_PH = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.PH", HysysVar=f"@@@@{prefix_tag}.PH", NumDecimals=3,
+                 UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=units[prefix_tag]["PH"])
+    tag_PL = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.PL", HysysVar=f"@@@@{prefix_tag}.PL", NumDecimals=3,
+                 UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=units[prefix_tag]["PL"])
+    tag_LL = Tag(ID=str(uuid.uuid4()), Name=f"{prefix_tag}.LL", HysysVar=f"@@@@{prefix_tag}.LL", NumDecimals=3,
+                 UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=units[prefix_tag]["LL"])
+    new_tag.append(tag_HH)
+    new_tag.append(tag_PH)
+    new_tag.append(tag_PL)
+    new_tag.append(tag_LL)
+    writeTags(new_tag, tags, "", tagName_list)"""
+    new_tag = find_faceplate_tags(tag_list, prefix_tag, units)
+
+    # Obtener los colores de alarmas
+    hh_color = str(alarmsPriority_dict.get(f"{prefix_tag}.HH", [None, None])[1])
+    hi_color = str(alarmsPriority_dict.get(f"{prefix_tag}.HI", [None, None])[1])
+    li_color = str(alarmsPriority_dict.get(f"{prefix_tag}.LO", [None, None])[1])
+    ll_color = str(alarmsPriority_dict.get(f"{prefix_tag}.LL", [None, None])[1])
+
+    # Obtener los valores de los límites
+    high_value = float(units[prefix_tag]["SH"])
+    low_value = float(units[prefix_tag]["SL"])
+
+    # Calcular los puntos intermedios
+    puntos = [round(low_value + i * (high_value - low_value) / (6 - 1), 2) for i in range(6)]
+
+    # Si hh_color no está definido, usar hi_color
+    if hh_color is None:
+        hh_color = hi_color
+    tag_MODE, tag_ALRM, tag_AFLS, tag_AOFS, tag__PV, tag_SV, tag_HH, tag_PH, tag_PL, tag_LL, tag_PV, tag_MV = new_tag
+    # Escribir los tags en la base de datos
+    writeTags(new_tag, tags, "", tagName_list)
+    #TODO: SCALE trobar max i minim i dividir per 5
+    # Si LL no existe, usa LO
+    if ll_color is None:
+        ll_color = li_color
+    unit = units[prefix_tag]["Unit"]
+    comment = units[prefix_tag]["Comment"]
+    com_ = comment.strip(" ")
+
+    # Encuentra la posición del segundo espacio
+    space_count = 0
+    for i, char in enumerate(com_):
+        if char == " ":
+            space_count += 1
+        if space_count == 2:
+            # Inserta un salto de línea real
+            comment = com_[:i + 1] + "\n" + com_[i + 1:]
+            break
+    controller = ET.SubElement(touch.Window, "Controller",
+                               Width=str(touch.Width),
+                               Height=str(touch.Height),
+                               X=str(touch.X),
+                               Y=str(touch.Y),
+                               Stroke="Transparent",
+                               Fill="Transparent",
+                               ShapeName="",
+                               Header="",
+                               Footer="",
+                               FacePlateBackground="Transparent")
+    ET.SubElement(controller, "Faceplate")
+    CustomFacePlate = ET.SubElement(controller, "CustomFacePlate")
+    window = ET.SubElement(CustomFacePlate, "Window",
+                           WindowWidth="143",
+                           WindowHeight="807",
+                           Background="#FFC0C0C0",
+                           MainWindow="False",
+                           ID=str(uuid.uuid4()))
+    ET.SubElement(window, "Rectangle",
+                  Width="138.5",
+                  Height="90.4",
+                  X="2",
+                  Y="75.3352",
+                  ShapeName="ln_0",
+                  Fill="#FF000000",
+                  Stroke="#FF000000",
+                  StrokeThickness="1",
+                  Group="")
+    ET.SubElement(window, "Rectangle",
+                  Width="138.3",
+                  Height="45.657",
+                  X="2",
+                  Y="168.3",
+                  ShapeName="ln_44",
+                  Fill="Black",
+                  Stroke="#FF000000",
+                  StrokeThickness="1",
+                  Group="")
+    ET.SubElement(window, "Rectangle",
+                  Width="0.974908308474742",
+                  Height="0.0854314002828853",
+                  X="0.013986013986014",
+                  Y="0.912305516265912",
+                  ShapeName="ln_2",
+                  Fill="#00FFFFFF",
+                  Stroke="#FF000000",
+                  StrokeThickness="1",
+                  Group="")
+
+    ET.SubElement(window, "Rectangle",
+                  Width="0.268531468531468",
+                  Height="0.428854314002829",
+                  X="50",
+                  Y="354.48",
+                  ShapeName="Background",
+                  Fill="#FF808080",
+                  Stroke="#FF000000",
+                  StrokeThickness="1",
+                  Group="")
+    """ET.SubElement(window, "Rectangle",
+                  Width="138.5",
+                  Height="45.66",
+                  X="2",
+                  Y="216.30",
+                  ShapeName="rec_0",
+                  Fill="Black",
+                  Stroke="Black",
+                  StrokeThickness="1",
+                  Group="")"""
+    """ET.SubElement(window, "Rectangle",
+                  Width="138.5",
+                  Height="45.66",
+                  X="2",
+                  Y="265",
+                  ShapeName="rec_1",
+                  Fill="Black",
+                  Stroke="Black",
+                  StrokeThickness="1",
+                  Group="")"""
+    dyn_lev = ET.SubElement(window, "DynamicLevel",
+                            ShapeName="lv_0",
+                            X="53",
+                            Y="363",
+                            Width="21.2",
+                            Height="322.331",
+                            Stroke="Transparent",
+                            Fill="Black",
+                            LevelTag=str(tag_PV.ID),
+                            LevelFill1="#00ff00",
+                            MinValue=str(low_value),
+                            MaxValue=str(high_value),
+                            LevelValue1=str(low_value),
+                            LevelValue2=str(high_value))
+    cond_list_ = ET.SubElement(dyn_lev, "ConditionsList")
+    ET.SubElement(cond_list_, "IISCondition",
+                  Expression=str(prefix_tag + ".#PV==16777216"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1="Cyan",
+                  PropertyNameCC1="Foreground")
+    ET.SubElement(cond_list_, "IISCondition",
+                  Expression=str(prefix_tag + ".ALRM==524288"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(hh_color),
+                  PropertyNameCC1="Foreground",
+                  ColorB1=str(hh_color),
+                  PropertyNameBLK1="Foreground",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list_, "IISCondition",
+                  Expression=str(prefix_tag + ".ALRM==32768"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(hi_color),
+                  PropertyNameCC1="Foreground",
+                  ColorB1=str(hi_color),
+                  PropertyNameBLK1="Foreground",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list_, "IISCondition",
+                  Expression=str(prefix_tag + ".ALRM==16384"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(li_color),
+                  PropertyNameCC1="Foreground",
+                  ColorB1=str(li_color),
+                  PropertyNameBLK1="Foreground",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list_, "IISCondition",
+                  Expression=str(prefix_tag + ".ALRM==262144"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(ll_color),
+                  PropertyNameCC1="Foreground",
+                  ColorB1=str(ll_color),
+                  PropertyNameBLK1="Foreground",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list_, "IISCondition",
+                  Expression="1==1",
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1="#00ff00",
+                  PropertyNameCC1="Foreground",
+                  ColorB1=str(ll_color),
+                  PropertyNameBLK1="Foreground",
+                  BlinkingType1="False")
+    bind1 = ET.SubElement(dyn_lev, "BindingList")
+    ET.SubElement(bind1, "Binding",
+                  GenericName=str(prefix_tag + ".ALRM"),
+                  Value=str(prefix_tag + ".ALRM"))
+    ET.SubElement(bind1, "Binding",
+                  GenericName=str(prefix_tag + ".#PV"),
+                  Value=str(prefix_tag + ".#PV"))
+    labels = [
+        ("lb_0", str(puntos[-1]), "355"),
+        ("lb_1", str(puntos[-2]), "419"),
+        ("lb_2", str(puntos[3]), "484"),
+        ("lb_3", str(puntos[2]), "548.4"),
+        ("lb_4", str(puntos[1]), "612.864"),
+        ("lb_5", str(puntos[0]), "675"),
+    ]
+    print(prefix_tag)
+    for shape_name, content, y_pos in labels:
+        ET.SubElement(window, "LabelText",
+                      Width="29.6",
+                      Height="21",
+                      X="105",
+                      Y=str(y_pos),
+                      ShapeName=shape_name,
+                      Foreground="#FF000000",
+                      Background="#00FFFFFF",
+                      Tag="",
+                      Format="",
+                      Content=content,
+                      FontAutoSize="True",
+                      FontSize="12",
+                      FontFamily="Courier New",
+                      TextAlign="Right",
+                      Alarm="",
+                      Alarm2="",
+                      Angle="0",
+                      CenterX="0.5",
+                      CenterY="0.5",
+                      Group="")
+
+    din_rect1 = ET.SubElement(window, "DinamicRectangle",
+                              ShapeName="COLOR",
+                              X="0.216783216783217",
+                              Y="0.0961810466760962",
+                              Width="0.106293706293708",
+                              Height="0.0282885431400283",
+                              Fill="#FFFFFFFF",
+                              Stroke="#00FFFFFF",
+                              StrokeThickness="1")
+    cond_list1 = ET.SubElement(din_rect1, "ConditionsList")
+    ET.SubElement(cond_list1, "IISCondition",
+                  Expression=str(prefix_tag + ".AOFS==1073741824"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1="#FF0000FF",
+                  PropertyNameCC1="Fill")
+    ET.SubElement(cond_list1, "IISCondition",
+                  Expression=str(prefix_tag + ".ALRM==524288"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(hh_color),
+                  PropertyNameCC1="Fill",
+                  ColorB1=str(hh_color),
+                  PropertyNameBLK1="Fill",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list1, "IISCondition",
+                  Expression=str(prefix_tag + ".ALRM==32768"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(hi_color),
+                  PropertyNameCC1="Fill",
+                  ColorB1=str(hi_color),
+                  PropertyNameBLK1="Fill",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list1, "IISCondition",
+                  Expression=str(prefix_tag + ".ALRM==16384"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(li_color),
+                  PropertyNameCC1="Fill",
+                  ColorB1=str(li_color),
+                  PropertyNameBLK1="Fill",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list1, "IISCondition",
+                  Expression=str(prefix_tag + ".ALRM==262144"),
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1=str(ll_color),
+                  PropertyNameCC1="Fill",
+                  ColorB1=str(ll_color),
+                  PropertyNameBLK1="Fill",
+                  BlinkingType1="Yes")
+    ET.SubElement(cond_list1, "IISCondition",
+                  Expression="1==1",
+                  ColorChangeType1="NormalColorChange",
+                  ColorC1="#00ff00",
+                  PropertyNameCC1="Fill",
+                  ColorB1=str(ll_color),
+                  PropertyNameBLK1="Fill",
+                  BlinkingType1="False")
+    bind_list1 = ET.SubElement(din_rect1, "BindingList")
+    ET.SubElement(bind_list1, "Binding",
+                  GenericName=str(prefix_tag + ".AOFS"),
+                  Value=str(prefix_tag + ".AOFS"))
+    ET.SubElement(bind_list1, "Binding",
+                  GenericName=str(prefix_tag + ".ALRM"),
+                  Value=str(prefix_tag + ".ALRM"))
+    ET.SubElement(bind_list1, "Binding",
+                  GenericName=str(prefix_tag + ".AFLS"),
+                  Value=str(prefix_tag + ".AFLS"))
+    dyn_text1 = ET.SubElement(window, "DynamicText",
+                              ShapeName="text_1294",
+                              X="5",
+                              Y="110",
+                              Background="#00FFFFFF",
+                              Foreground="Cyan",
+                              Text="AUT",
+                              FontSize="17",
+                              FontFamily="Courier New",
+                              HorizontalAlignment="Stretch",
+                              ScaleX="1",
+                              ScaleY="1",
+                              FontWeight="Normal")
+    cond_list2 = ET.SubElement(dyn_text1, "ConditionsList")
+    modes = {
+        262144: "ROUT",
+        524288: "RCAS",
+        1048576: "PRD",
+        2097152: "CAS",
+        4194304: "AUT",
+        8388608: "MAN",
+        16777216: "SEMI",
+        67108864: "TRK",
+        134217728: "IMAN",
+        2147483648: "OOS"
+    }
+    for value, text in modes.items():
+        ET.SubElement(cond_list2, "IISCondition",
+                      Expression=f"{prefix_tag}.MODE=={value}",
+                      ColorChangeType1="",
+                      ColorC1="",
+                      ColorB1="",
+                      PropertyNameCC1="",
+                      PropertyNameBLK1="",
+                      BlinkingType1="",
+                      ColorChangeType2="",
+                      ColorC2="",
+                      ColorB2="",
+                      PropertyNameCC2="",
+                      PropertyNameBLK2="",
+                      BlinkingType2="",
+                      IsContinuous="False",
+                      ReplaceText="True",
+                      Text=text)
+    bind_list2 = ET.SubElement(dyn_text1, "BindingList")
+    ET.SubElement(bind_list2, "Binding",
+                  GenericName=str(prefix_tag + ".MODE"),
+                  Value=str(prefix_tag + ".MODE"))
+    dyn_text2 = ET.SubElement(window, "DynamicText",
+                              ShapeName="text_1295",
+                              X="5",
+                              Y="141",
+                              Background="#00FFFFFF",
+                              Foreground="Cyan",
+                              Text="ALARM",
+                              FontSize="17",
+                              FontFamily="Courier New",
+                              HorizontalAlignment="Stretch",
+                              ScaleX="1",
+                              ScaleY="1")
+
+    alarms = {
+        524288: "HH",
+        32768: "HI",
+        16384: "LO",
+        262144: "LL",
+        "1==1": "NR"
+    }
+
+    # Crear el elemento ConditionsList dentro de dyn_text1
+    cond_list3 = ET.SubElement(dyn_text2, "ConditionsList")
+
+    # Agregar las condiciones
+    for value, text in alarms.items():
+        ET.SubElement(cond_list3, "IISCondition",
+                      Expression=f"{prefix_tag}.ALRM=={value}" if isinstance(value, int) else value,
+                      ColorChangeType1="",
+                      ColorC1="",
+                      ColorB1="",
+                      PropertyNameCC1="",
+                      PropertyNameBLK1="",
+                      BlinkingType1="",
+                      ColorChangeType2="",
+                      ColorC2="",
+                      ColorB2="",
+                      PropertyNameCC2="",
+                      PropertyNameBLK2="",
+                      BlinkingType2="",
+                      IsContinuous="False",
+                      ReplaceText="True",
+                      Text=text)
+    bind_list3 = ET.SubElement(dyn_text2, "BindingList")
+    ET.SubElement(bind_list3, "Binding",
+                  GenericName=str(prefix_tag + ".ALRM"),
+                  Value=str(prefix_tag + ".ALRM"))
+    ET.SubElement(window, "LabelText",
+                  Width="0.537062937062938",
+                  Height="0.0263083451202263",
+                  X="0.034965034965035",
+                  Y="0.209335219236209",
+                  ShapeName="lb_8",
+                  Foreground="#FFFFFFFF",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Content="PV",
+                  FontAutoSize="True",
+                  FontSize="12",
+                  FontFamily="Courier New",
+                  TextAlign="Left",
+                  CenterX="0.5",
+                  CenterY="0.5")
+    ET.SubElement(window, "LabelText",
+                  Width="39.2",
+                  Height="23.06",
+                  X="104",
+                  Y="168",
+                  ShapeName="lb_9",
+                  Foreground="#FFFFFFFF",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Content=unit,
+                  FontAutoSize="True",
+                  FontSize="12",
+                  FontFamily="Courier New",
+                  TextAlign="Left",
+                  CenterX="0.5",
+                  CenterY="0.5")
+    ET.SubElement(window, "LabelText",
+                  Width="100.2",
+                  Height="50",
+                  X="36",
+                  Y="192",
+                  ShapeName="lb_10",
+                  Foreground="Cyan",
+                  Background="#00FFFFFF",
+                  Tag=str(tag_PV.ID),
+                  Content="VALUE",
+                  FontAutoSize="False",
+                  FontSize="16",
+                  FontFamily="Courier New",
+                  TextAlign="Right",
+                  CenterX="0.5",
+                  CenterY="0.5")
+    ET.SubElement(window, "LabelText",
+                  Width="0.699300699300699",
+                  Height="0.0353606789250354",
+                  X="0.153846153846154",
+                  Y="0",
+                  ShapeName="lb_10",
+                  Foreground="Black",
+                  Background="#00FFFFFF",
+                  Tag="",
+                  Content=prefix_tag,
+                  FontAutoSize="True",
+                  FontSize="14",
+                  FontFamily="Courier New",
+                  TextAlign="Left",
+                  CenterX="0.5",
+                  CenterY="0.5")
+    ET.SubElement(window, "DynamicText",
+                  ShapeName="text_1298",
+                  X="0.034965034965035",
+                  Y="0.0381895332390382",
+                  Background="#00FFFFFF",
+                  Foreground="#FF000000",
+                  Text=comment,
+                  FontSize="14",
+                  FontFamily="Courier New",
+                  HorizontalAlignment="Stretch",
+                  ScaleX="1",
+                  ScaleY="1"
+                  )
+    polygon = ET.SubElement(window, "Polygon",
+                            ShapeName="polygon_0",
+                            X="0.398601398601399",
+                            Y="0.936350777934936",
+                            Width="0.240559440559439",
+                            Height="0.0407355021216408",
+                            Group="",
+                            Fill="#FF483D8B",
+                            Stroke="#FF000000",
+                            StrokeThickness="1",
+                            RenderTransform="Identity",
+                            RenderTransformOrigin="0,0",
+                            Rotation="0")
+
+    points = ET.SubElement(polygon, "Points")
+
+    point_coords = [
+        {"X": "10", "Y": "50"},
+        {"X": "50", "Y": "0"},
+        {"X": "90", "Y": "50"},
+        {"X": "50", "Y": "90"}
+    ]
+
+    for point in point_coords:
+        ET.SubElement(points, "Point", X=point["X"], Y=point["Y"])
+    dyn_level = ET.SubElement(window, "DynamicLevel",
+                              X="77",
+                              Y="363",
+                              Width="4",
+                              Height="322.331",
+                              Fill="Transparent",
+                              Stroke="Transparent",
+                              LevelTag=str(tag_HH.ID),
+                              LevelValue1=str(low_value),
+                              LevelValue2=str(high_value),
+                              LevelFill1="Red",
+                              MinValue=str(low_value),
+                              MaxValue=str(high_value),
+                              ShapeName="Red2 Level")
+    cond_list = ET.SubElement(dyn_level, "ConditionsList")
+    ET.SubElement(cond_list, "IISCondition",
+                  Expression=f"{low_value}=={prefix_tag}.LL && {high_value}=={prefix_tag}.HH",
+                  ColorC1="Transparent",
+                  PropertyNameCC1="Foreground",
+                  ColorChangeType1="NormalColorChange")
+    bind_list = ET.SubElement(dyn_level, "BindingList")
+    ET.SubElement(bind_list, "Binding",
+                  GenericName=f"{prefix_tag}.LL",
+                  Value=f"{prefix_tag}.LL")
+    ET.SubElement(bind_list, "Binding",
+                  GenericName=f"{prefix_tag}.HH",
+                  Value=f"{prefix_tag}.HH")
+    ET.SubElement(window, "DynamicLevel",
+                  X="77",
+                  Y="363",
+                  Width="4",
+                  Height="322.331",
+                  Fill="Transparent",
+                  Stroke="Transparent",
+                  LevelTag=str(tag_PH.ID),
+                  LevelValue1=str(low_value),
+                  LevelValue2=str(high_value),
+                  LevelFill1="#00ff00",
+                  MinValue=str(low_value),
+                  MaxValue=str(high_value),
+                  ShapeName="Green Level")
+
+    dyn_level = ET.SubElement(window, "DynamicLevel",
+                  X="77",
+                  Y="363",
+                  Width="4",
+                  Height="322.331",
+                  Fill="Transparent",
+                  Stroke="Transparent",
+                  LevelTag=str(tag_PL.ID),
+                  LevelValue1=str(low_value),
+                  LevelValue2=str(high_value),
+                  LevelFill1="Red",
+                  MinValue=str(low_value),
+                  MaxValue=str(high_value),
+                  ShapeName="Red1 Level")
+    cond_list = ET.SubElement(dyn_level, "ConditionsList")
+    ET.SubElement(cond_list, "IISCondition",
+                  Expression=f"{low_value}=={prefix_tag}.LL AND {high_value}=={prefix_tag}.HH",
+                  ColorC1="#FF808080",
+                  PropertyNameCC1="Foreground",
+                  ColorChangeType1="NormalColorChange")
+    bind_list = ET.SubElement(dyn_level, "BindingList")
+
+    ET.SubElement(bind_list, "Binding",
+                  GenericName=f"{prefix_tag}.LL",
+                  Value=f"{prefix_tag}.LL")
+    ET.SubElement(bind_list, "Binding",
+                  GenericName=f"{prefix_tag}.HH",
+                  Value=f"{prefix_tag}.HH")
+
+    ET.SubElement(window, "DynamicLevel",
+                  X="77",
+                  Y="363",
+                  Width="4",
+                  Height="322.331",
+                  Fill="Transparent",
+                  Stroke="Transparent",
+                  LevelTag=str(tag_LL.ID),
+                  LevelValue1=str(low_value),
+                  LevelValue2=str(high_value),
+                  LevelFill1="#FF808080",
+                  MinValue=str(low_value),
+                  MaxValue=str(high_value),
+                  ShapeName="Red3 Level")
+    ET.SubElement(window, "ModeControl",
+                  X="5",
+                  Y="110",
+                  Width="24.60",
+                  Height="30.4",
+                  Tag=str(tag_MODE.ID))
+    y_values = [365, 429, 494, 558.4, 622.864, 685]
+    lines = []
+    for y in y_values:
+        point_1 = LogicClass.XPoint()
+        point_2 = LogicClass.XPoint()
+        point_3 = LogicClass.XPoint()
+
+        point_1.X, point_1.Y = 30.4, 0.4
+        point_2.X, point_2.Y = 28.1, 0
+        point_3.X, point_3.Y = 14.1, 0
+
+        line = Line(
+            X="59", Y=str(y), Width="30.4", Height="10", ShapeName="line1", Fill="", Stroke="White",
+            StrokeThickness="2", Name="", Tag="", RenderTransform="", RenderTransformOrigin="",
+            IISCondition=[], Binding=[], Points=[point_1, point_2, point_3], Rotation="",
+            LineStyle="LINE", arrowStart=None, arrowEnd=None, ZIndex="", ZIndexGroup=[]
+        )
+        writePolyLine(line, window, "")
+        lines.append(line)
+
+
+
+    """line1 = Line(X="59", Y="365", Width="30.4", Height="10", ShapeName="line1", Fill="", Stroke="White", StrokeThickness="3",
+                 Name="", Tag="", RenderTransform="", RenderTransformOrigin="", IISCondition=[], Binding=[], Points=[[30.4, 0.4], [28.1, 0], [14.1, 0]],
+                 Rotation="", LineStyle="LINE", arrowStart=None, arrowEnd=None, ZIndex="", ZIndexGroup=[])
+    writePolyLine(line1, window, "")
+    line2 = Line(X="59", Y="429", Width="30.4", Height="10", ShapeName="line1", Fill="", Stroke="White",
+                 StrokeThickness="3",
+                 Name="", Tag="", RenderTransform="", RenderTransformOrigin="", IISCondition=[], Binding=[],
+                 Points=[[30.4, 0.4], [28.1, 0], [14.1, 0]],
+                 Rotation="", LineStyle="LINE", arrowStart=None, arrowEnd=None, ZIndex="", ZIndexGroup=[])
+    line3 = Line(X="59", Y="494", Width="30.4", Height="10", ShapeName="line1", Fill="", Stroke="White",
+                 StrokeThickness="3",
+                 Name="", Tag="", RenderTransform="", RenderTransformOrigin="", IISCondition=[], Binding=[],
+                 Points=[[30.4, 0.4], [28.1, 0], [14.1, 0]],
+                 Rotation="", LineStyle="LINE", arrowStart=None, arrowEnd=None, ZIndex="", ZIndexGroup=[])
+    line4 = Line(X="59", Y="558.4", Width="30.4", Height="10", ShapeName="line1", Fill="", Stroke="White",
+                 StrokeThickness="3",
+                 Name="", Tag="", RenderTransform="", RenderTransformOrigin="", IISCondition=[], Binding=[],
+                 Points=[[30.4, 0.4], [28.1, 0], [14.1, 0]],
+                 Rotation="", LineStyle="LINE", arrowStart=None, arrowEnd=None, ZIndex="", ZIndexGroup=[])
+    line5 = Line(X="59", Y="622.864", Width="30.4", Height="10", ShapeName="line1", Fill="", Stroke="White",
+                 StrokeThickness="3",
+                 Name="", Tag="", RenderTransform="", RenderTransformOrigin="", IISCondition=[], Binding=[],
+                 Points=[[30.4, 0.4], [28.1, 0], [14.1, 0]],
+                 Rotation="", LineStyle="LINE", arrowStart=None, arrowEnd=None, ZIndex="", ZIndexGroup=[])
+    line6 = Line(X="59", Y="685", Width="30.4", Height="10", ShapeName="line1", Fill="", Stroke="White",
+                 StrokeThickness="3",
+                 Name="", Tag="", RenderTransform="", RenderTransformOrigin="", IISCondition=[], Binding=[],
+                 Points=[[30.4, 0.4], [28.1, 0], [14.1, 0]],
+                 Rotation="", LineStyle="LINE", arrowStart=None, arrowEnd=None, ZIndex="", ZIndexGroup=[])"""
+
+

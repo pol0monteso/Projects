@@ -77,7 +77,7 @@ class Button:
 
 
 class Tag:
-    def __init__(self, ID, Name, HysysVar, NumDecimals, UnitID, UnitEng, HysysVarUnit):
+    def __init__(self, ID, Name, HysysVar, NumDecimals, UnitID, UnitEng, HysysVarUnit, DefaultValue):
         self.ID = ID
         self.Name = Name
         self.HysysVar = HysysVar
@@ -85,13 +85,14 @@ class Tag:
         self.UnitID = UnitID
         self.UnitEng = UnitEng
         self.HysysVarUnit = HysysVarUnit
+        self.DefaultValue = DefaultValue
     @classmethod
     def default(cls):
-        return cls(ID=str(uuid.uuid4()), Name="", HysysVar="", NumDecimals=3, UnitID=None, UnitEng=None, HysysVarUnit="")
+        return cls(ID=str(uuid.uuid4()), Name="", HysysVar="", NumDecimals=3, UnitID=None, UnitEng=None, HysysVarUnit="", DefaultValue=0)
 
 
 class Touch:
-    def __init__(self, Stroke, Height, Width, Shapename, Screen, RenderTransform, RenderTransformOrigin, ZIndex, X, Y, Window, FunctionType, DataTag, CommandData):
+    def __init__(self, Stroke, Height, Width, Shapename, Screen, RenderTransform, RenderTransformOrigin, ZIndex, X, Y, Window, FunctionType, DataTag, CommandData, Faceplate):
         self.Stroke = Stroke
         self.Height = Height
         self.Width = Width
@@ -105,11 +106,12 @@ class Touch:
         self.FunctionType = FunctionType
         self.DataTag = DataTag
         self.CommandData = CommandData
-
+        self.Faceplate = Faceplate
     @classmethod
     def default(cls):
         return cls(Stroke="White", Shapename="", Height="100", Width="100", Screen="", RenderTransformOrigin="",
-                   RenderTransform="", ZIndex=1000, X="0", Y="0", Window="", FunctionType="", DataTag="", CommandData="")
+                   RenderTransform="", ZIndex=1000, X="0", Y="0", Window="", FunctionType="", DataTag="", CommandData="",
+                   Faceplate="")
 
 
 class Alarm:
@@ -170,7 +172,9 @@ class Level:
 
 class Rectangle:
     def __init__(self, Width, Height, X, Y, ShapeName, Fill, Stroke, StrokeThickness, Name, Tag,
-                 RenderTransform, RenderTransformOrigin, IISCondition, Binding, Rotation, ZIndexGroup, ZIndex):
+                 RenderTransform, RenderTransformOrigin, IISCondition, Binding, Rotation, ZIndexGroup, ZIndex,
+                 OffsetX, TransformFromX, TransformToX, TagValueX,
+                 OffsetY, TransformFromY, TransformToY, TagValueY, PropertyX, PropertyY):
         self.Width = Width
         self.Height = Height
         self.X = X
@@ -191,9 +195,14 @@ class Rectangle:
 
     @classmethod
     def default(cls):
-        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Rectangle", Fill="White", Stroke="Black",
-                   StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
-                   IISCondition=[], Binding=[], Rotation=0, ZIndex=0, ZIndexGroup=0)
+        return cls(
+            Width=100, Height=100, X=0, Y=0, ShapeName="Rectangle", Fill="White", Stroke="Black",
+            StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
+            IISCondition=[], Binding=[], Rotation=0, ZIndex=0, ZIndexGroup=0,
+            OffsetX=None, TransformFromX=None, TransformToX=None, TagValueX=None,
+            OffsetY=None, TransformFromY=None, TransformToY=None, TagValueY=None,
+            PropertyX=None, PropertyY=None
+        )
 
 
 class Text:
@@ -295,7 +304,6 @@ class Arc:
         return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Rectangle", Fill="White", Stroke="Black",
                    StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
                    IISCondition=[], Binding=[], Rotation=0, StartAngle="", EndAngle="", ZIndex=0, ZIndexGroup=0)
-
 
 
 class PolyLine:
@@ -444,7 +452,7 @@ class ProcessData:
 class Line:
     def __init__(self, Width, Height, X, Y, ShapeName, Fill, Stroke, StrokeThickness, Name, Tag,
                  RenderTransform, RenderTransformOrigin, IISCondition, Binding, Points, Rotation, LineStyle,
-                 arrowStart, arrowEnd, ZIndex, ZIndexGroup):
+                 arrowStart, arrowEnd, ZIndex, ZIndexGroup ):
         self.Width = Width
         self.Height = Height
         self.X = X
@@ -466,6 +474,7 @@ class Line:
         self.arrowEnd = arrowEnd
         self.ZIndex = ZIndex
         self.ZIndexGroup = ZIndexGroup
+
 
     @classmethod
     def default(cls):

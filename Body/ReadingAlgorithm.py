@@ -664,29 +664,12 @@ def readDataCharacter(child, l, t, rt, ro, aux, render_list, name, tuplas_report
 def initRectangles(child, l, t, ro, aux, render_list, name, tuplas_report):
     rect1 = Rectangle.default()
     attrib = child.attrib
-
-    """rect1.Width = attrib.get("ShapeWidth", "")
-    rect1.Height = attrib.get("ShapeHeight", "")
-    rect1.Tag = attrib.get("Tag", "")
-    rect1.Stroke = attrib.get("Stroke", "")
-    rect1.StrokeThickness = attrib.get("StrokeThickness", "")"""
     set_common_attributes(rect1, child, ro, l, t, aux, render_list, name, tuplas_report)
     if "Fill" in child.attrib and "Null" not in child.attrib["Fill"]:
         fill = attrib.get("Fill", "")
         rect1.Fill = parse_fill(fill) if 'Gradient' in fill else fill
     else:
         rect1.Fill = "#00FF0000"
-
-    #rect1.RenderTransform = parse_render_transform(child, render_list)
-
-    """if "Canvas.Left" in attrib and "Canvas.Top" in attrib:
-        x_offset = float(attrib["Canvas.Left"]) + float(l)
-        y_offset = float(attrib["Canvas.Top"]) + float(t)
-        if aux:
-            calculateTransHelper(rect1.RenderTransform, attrib["Canvas.Left"], l, attrib["Canvas.Top"], t, rect1)
-        else:
-            rect1.X = x_offset
-            rect1.Y = y_offset"""
 
     rect1.RenderTransformOrigin = ro
 
@@ -1143,7 +1126,15 @@ def readTouch(child, l, t, ro, aux, render_list, name, tuplas_report, tag_list):
                 touch.DataTag = txt_data
                 touch.CommandData = command_data
                 return touch
-
+            elif "type=callWindow;target=faceplate;" in funct.attrib.get(
+                    "FunctionAndParameter", ""):
+                #TODO: read Tag and initialize faceplate PVI
+                input_str = funct.attrib.get("FunctionAndParameter", "")
+                data_dict = dict(item.split("=") for item in input_str.split(";") if "=" in item)
+                tag_faceplate = data_dict.get("parameter")
+                if bind.GenericName == tag_faceplate and bind.Value != "":
+                    touch.Faceplate = bind.Value
+                    return touch
 
 def force_zindex(zindex_list, zindexGroup):
     sorted_list = sorted(zindex_list, key=lambda object1: int(object1.ZIndex))

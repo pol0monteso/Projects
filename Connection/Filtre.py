@@ -533,6 +533,7 @@ def load_units(path):
 
     # Leer la tabla UnitTbl del archivo PjtRef.mdb
     pjt_ref_file = 'PjtRef.accdb'
+    #pjt_ref_file = 'PjtRef.mdb'
     pjt_ref_path = os.path.join(path, pjt_ref_file)
     conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + pjt_ref_path
     conn = pyodbc.connect(conn_str)
@@ -576,12 +577,17 @@ def load_csv_data(csv_file_path):
         for index, row in df.iterrows():
             if len(row) >= 236:  # Asegúrate de que hay al menos 236 columnas
                 name = row[1]  # Columna B
+                block = row[2]
                 hh = row[131]  # Columna EB
                 ll = row[137]  # Columna EH
                 ph = row[217]  # Columna HJ
                 pl = row[235]  # Columna IB
                 ml = row[141]
                 mh = row[140]
+                ophi = row[204]
+                oplo = row[205]
+                msh = row[144]
+                msl = row[145]
 
                 if pd.notna(name):
                     csv_data[name] = {
@@ -590,7 +596,12 @@ def load_csv_data(csv_file_path):
                         'PH': ph,
                         'PL': pl,
                         'MH': mh,
-                        'ML': ml
+                        'ML': ml,
+                        'Block': block,
+                        'OPHI': ophi,
+                        'OPLO': oplo,
+                        'MSH': msh,
+                        'MSL': msl
                     }
 
         return csv_data
@@ -610,6 +621,43 @@ def generate_csv_data(csv_directory):
 
     return csv_data
 
+def load_connect_mapping(path):
+    # Archivos .mdb que comienzan con 'FCS' o 'SCS'
+    files = [f for f in os.listdir(path) if (f.endswith('.mdb') or f.endswith('.accdb')) and (f.startswith('FCS') or f.startswith('SCS'))]
+
+    connect_dict = {}
+
+    for file in files:
+        # Conexión a la base de datos
+        conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + os.path.join(path, file)
+        conn = pyodbc.connect(conn_str)
+        cursor = conn.cursor()
+
+        try:
+            # Consulta a ConnectTbl incluyendo FromItemName
+            query = '''
+                    SELECT FromTagName, ToTagName, FromItemName
+                    FROM ConnectTbl;
+                    '''
+            cursor.execute(query)
+
+            for row in cursor.fetchall():
+                from_tag = row.FromTagName
+                to_tag = row.ToTagName
+                from_item = row.FromItemName
+
+                # Filtrar solo si FromItemName contiene 'OUT'
+                if from_item and 'OUT' in from_item.upper():
+                    if to_tag and not str(to_tag).startswith('%'):
+                        connect_dict[from_tag] = to_tag
+
+        except Exception as e:
+            print(f"Error leyendo ConnectTbl en {file}: {e}")
+
+        cursor.close()
+        conn.close()
+
+    return connect_dict
 
 # Llamadas principales
 """units = load_units(r'C:\Emulation\HMIscreensYOKOGAWA\Source')

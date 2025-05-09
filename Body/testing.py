@@ -1,3 +1,6 @@
+from uuid import uuid4
+
+from Body.Faceplate import faceplate_pid, _faceplate_pvi
 from Body.ReadingAlgorithm import *
 from tkinter import ttk
 import tkinter as tk
@@ -5,7 +8,7 @@ from colorama import init, Fore, Back, Style
 from Connection.DataBase import *
 import csv
 from Connection.Filtre import *
-from Body.ReadWriteXML import initScreen
+from Body.ReadWriteXML import initScreen, faceplate_pvi
 import xml.etree.ElementTree as ET
 from Utils.Utils import indent
 from datetime import datetime
@@ -22,11 +25,14 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
     tagName_list = []
     alarm_dict = {}
     units = load_units(database_path)
+    cascade_dict = load_connect_mapping(database_path)
 
     #xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
     xlsx_data = generate_csv_data(tuning_params)
     # units = {key: {**units[key], **xlsx_data[key]} for key in units if key in xlsx_data}
-    units = {key: {**units[key], **xlsx_data.get(key, {})} for key in units}
+    #units = {key: {**units[key], **xlsx_data.get(key, {})} for key in units}
+    all_keys = set(units.keys()) | set(xlsx_data.keys())
+    units = {key: {**units.get(key, {}), **xlsx_data.get(key, {})} for key in all_keys}
     tuples = []
     window_dict = {}
     touch_list = []
@@ -44,6 +50,7 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
     for archivo in os.listdir(directorio):
         if filter_list and "Ex" not in filter_list[0]:
             if (archivo.startswith(tuple(filter_list))) and archivo.endswith('.xaml'):
+            #if (archivo.startswith("PRO-0")) and archivo.endswith('.xaml'):
                 point = archivo.find('.')
                 ruta_archivo = os.path.join(directorio, archivo)
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -123,7 +130,14 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
                                         CommandData=str(touch.CommandData),
                                         DataTag=str(touch.DataTag),
                                         TypeFunction=str(touch.FunctionType))
-
+        elif touch.Faceplate:
+            if touch.Faceplate in units:
+                prefix_tag = touch.Faceplate
+                if "Block" in units[prefix_tag]:
+                    if units[prefix_tag]["Block"] == "PVI":
+                        _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list)
+                    elif units[prefix_tag]["Block"] == "PID":
+                        faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict)
     for button in button_list:
         if button.FunctionType == "callWindow":
             if button.Screen in window_dict.keys():

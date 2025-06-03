@@ -174,7 +174,7 @@ class Rectangle:
     def __init__(self, Width, Height, X, Y, ShapeName, Fill, Stroke, StrokeThickness, Name, Tag,
                  RenderTransform, RenderTransformOrigin, IISCondition, Binding, Rotation, ZIndexGroup, ZIndex,
                  OffsetX, TransformFromX, TransformToX, TagValueX,
-                 OffsetY, TransformFromY, TransformToY, TagValueY, PropertyX, PropertyY):
+                 OffsetY, TransformFromY, TransformToY, TagValueY, PropertyX, PropertyY, DataLinkInfo):
         self.Width = Width
         self.Height = Height
         self.X = X
@@ -192,6 +192,7 @@ class Rectangle:
         self.Rotation = Rotation
         self.ZIndex = ZIndex
         self.ZIndexGroup = ZIndexGroup
+        self.DataLinkInfo = DataLinkInfo
 
     @classmethod
     def default(cls):
@@ -201,7 +202,7 @@ class Rectangle:
             IISCondition=[], Binding=[], Rotation=0, ZIndex=0, ZIndexGroup=0,
             OffsetX=None, TransformFromX=None, TransformToX=None, TagValueX=None,
             OffsetY=None, TransformFromY=None, TransformToY=None, TagValueY=None,
-            PropertyX=None, PropertyY=None
+            PropertyX=None, PropertyY=None, DataLinkInfo=[]
         )
 
 
@@ -330,7 +331,7 @@ class PolyLine:
 
     @classmethod
     def default(cls):
-        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Rectangle", Fill="White", Stroke="Black",
+        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Line", Fill="White", Stroke="Black",
                    StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
                    IISCondition=[], Binding=[], Points=[], Rotation=0, ZIndex=0, ZIndexGroup=0)
 
@@ -360,7 +361,7 @@ class Ellipse:
 
     @classmethod
     def default(cls):
-        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Rectangle", Fill="White", Stroke="Black",
+        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="elip_", Fill="White", Stroke="Black",
                    StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
                    IISCondition=[], Binding=[], Points=[], Rotation=0, ZIndex=0, ZIndexGroup=0)
 
@@ -376,7 +377,8 @@ class DataChar:
 
 class Polygon:
     def __init__(self, Width, Height, X, Y, ShapeName, Fill, Stroke, StrokeThickness, Name, Tag,
-                 RenderTransform, RenderTransformOrigin, IISCondition, Binding, Points, Rotation, ZIndex, ZIndexGroup):
+                 RenderTransform, RenderTransformOrigin, IISCondition, Binding, Points, Rotation, ZIndex, ZIndexGroup,
+                 DataLinkInfo):
         self.Width = Width
         self.Height = Height
         self.X = X
@@ -395,12 +397,13 @@ class Polygon:
         self.Rotation = Rotation
         self.ZIndex = ZIndex
         self.ZIndexGroup = ZIndexGroup
+        self.DataLinkInfo = DataLinkInfo
 
     @classmethod
     def default(cls):
-        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Rectangle", Fill="White", Stroke="Black",
+        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="poly", Fill="White", Stroke="Black",
                    StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
-                   IISCondition=[], Binding=[], Points=[], Rotation=0, ZIndex=0, ZIndexGroup=0)
+                   IISCondition=[], Binding=[], Points=[], Rotation=0, ZIndex=0, ZIndexGroup=0, DataLinkInfo=[])
 
     class Tag:
         def __init__(self, ID, Name, HysysVar, NumDecimals):
@@ -478,7 +481,7 @@ class Line:
 
     @classmethod
     def default(cls):
-        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Rectangle", Fill="White", Stroke="Black",
+        return cls(Width=100, Height=100, X=0, Y=0, ShapeName="Line", Fill="White", Stroke="Black",
                    StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
                    IISCondition=[], Binding=[], Points=[], Rotation=0, LineStyle="LINE", arrowEnd=None, arrowStart=None,
                    ZIndex=0, ZIndexGroup=0)
@@ -512,7 +515,7 @@ class Arrow:
 
     @classmethod
     def default(cls):
-        return cls(Width=20, Height=20, X=0, Y=0, ShapeName="Rectangle", Fill="White", Stroke="Black",
+        return cls(Width=20, Height=20, X=0, Y=0, ShapeName="Rectarrow", Fill="White", Stroke="Black",
                    StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
                    IISCondition=[], Binding=[], Points=[], Rotation=0, ArrowEnd=False, ArrowStart=False, isVisible=False,
                    ZIndex=0, ZIndexGroup=0)

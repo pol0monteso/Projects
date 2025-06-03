@@ -39,7 +39,7 @@ def writeTouch(window_elem, touch, windows_dict):
                                ShapeName=touch.ShapeName)
 
 
-def writeTags(tag_list, tags, project_tree, tagName_list):
+def writeTags(tag_list, tags, project_tree, tagName_list, alarms, units, alarmPriority_dict, id_):
     """
     Escribe las etiquetas en el árbol de tags, optimizado para mejorar la legibilidad y rendimiento.
 
@@ -57,7 +57,7 @@ def writeTags(tag_list, tags, project_tree, tagName_list):
     primary_conditions = [".PV", ".MV", "SCALE", ".#PV", ".ALRM", ".MODE", ".CMOD", ".OMOD", ".", ".SH", ".SL", ".HH",
                           ".LL"]
     secondary_conditions = [".ALMPV"]
-
+    alarm_list = []
     if tag_list:
         for t in tag_list:
             # Usar variable local para evitar múltiples llamadas a str(t.Name)
@@ -73,6 +73,209 @@ def writeTags(tag_list, tags, project_tree, tagName_list):
             # Verificar si el tag cumple alguna de las condiciones
             if any(cond in tag_name for cond in primary_conditions) or any(
                     cond in tag_name for cond in secondary_conditions):
+                prefix = tag_name.split('.')[0]
+                if prefix in units:
+                    alarm_comment = units[prefix]['Comment']
+                elif prefix+'.HH' in alarmPriority_dict:
+                    alarm_comment = alarmPriority_dict[prefix+'.HH'][-1]
+                else:
+                    alarm_comment = ""
+                if prefix not in alarm_list and prefix+'.PV'==tag_name:
+                    alarm_list.append(prefix)
+                    id = ""
+                    for tag_ in tag_list:
+                        if tag_.Name == prefix + ".PV":
+                            id = tag_.ID
+                    if prefix+'.HH' in alarmPriority_dict:
+                            if alarmPriority_dict[prefix+'.HH'][0] == "High":
+                                priority = "100"
+                            elif alarmPriority_dict[prefix+'.HH'][0] == "Medium":
+                                priority = "0"
+                            elif alarmPriority_dict[prefix+'.HH'][0] == "Low":
+                                priority = "110"
+                            else:
+                                priority = "0"
+                            tag_id = str(uuid.uuid4())
+                            ET.SubElement(
+                                tags,
+                                "Tag",
+                                ID=tag_id,
+                                Name=prefix+'.ALMPVHH',
+                                IsMaster="True",
+                                HysysVar="@@@@"+prefix+'.ALMPVHH',
+                                NumDecimals=str(getattr(t, "NumDecimals", "")),
+                                HysysVarUnit=str(getattr(t, "HysysVarUnit", "")),
+                                DefaultValue=str(getattr(t, "DefaultValue", "")))
+                            element = ET.SubElement(alarms, "Alarm",
+                                                    ID=str(uuid.uuid4()),
+                                                    Name=prefix + '.ALMPVHH',
+                                                    Tag=tag_id,
+                                                    Description=alarm_comment,
+                                                    Screen=id_,
+                                                    Threshold=str(0.5),
+                                                    Priority=priority)
+                    elif prefix + '.HI' in alarmPriority_dict:
+                        if alarmPriority_dict[prefix + '.HI'][0] == "High":
+                            priority = "100"
+                        elif alarmPriority_dict[prefix + '.HI'][0] == "Medium":
+                            priority = "0"
+                        elif alarmPriority_dict[prefix + '.HI'][0] == "Low":
+                            priority = "110"
+                        else:
+                            priority = "0"
+                        tag_id = str(uuid.uuid4())
+                        ET.SubElement(
+                            tags,
+                            "Tag",
+                            ID=tag_id,
+                            Name=prefix + '.ALMPVHI',
+                            IsMaster="True",
+                            HysysVar="@@@@"+prefix+'.ALMPVHI',
+                            NumDecimals=str(getattr(t, "NumDecimals", "")),
+                            HysysVarUnit=str(getattr(t, "HysysVarUnit", "")),
+                            DefaultValue=str(getattr(t, "DefaultValue", "")))
+                        element = ET.SubElement(alarms, "Alarm",
+                                                ID=str(uuid.uuid4()),
+                                                Name=prefix + '.ALMPVHI',
+                                                Tag=tag_id,
+                                                Screen=id_,
+                                                Description=alarm_comment,
+                                                Threshold=str(0.5),
+                                                Priority=priority)
+                    if prefix + '.LO' in alarmPriority_dict:
+                        if alarmPriority_dict[prefix + '.LO'][0] == "High":
+                            priority = "100"
+                        elif alarmPriority_dict[prefix + '.LO'][0] == "Medium":
+                            priority = "0"
+                        elif alarmPriority_dict[prefix + '.LO'][0] == "Low":
+                            priority = "110"
+                        else:
+                            priority = "0"
+
+                        tag_id = str(uuid.uuid4())
+                        ET.SubElement(
+                            tags,
+                            "Tag",
+                            ID=tag_id,
+                            Name=prefix + '.ALMPVLO',
+                            IsMaster="True",
+                            HysysVar="@@@@"+prefix+'.ALMPVLO',
+                            NumDecimals=str(getattr(t, "NumDecimals", "")),
+                            HysysVarUnit=str(getattr(t, "HysysVarUnit", "")),
+                            DefaultValue=str(getattr(t, "DefaultValue", "")))
+                        element = ET.SubElement(alarms, "Alarm",
+                                                ID=str(uuid.uuid4()),
+                                                Name=prefix + '.ALMPVLO',
+                                                Tag=tag_id,
+                                                Screen=id_,
+                                                Description=alarm_comment,
+                                                Threshold=str(0.5),
+                                                Priority=priority)
+                    if prefix+'.LL' in alarmPriority_dict:
+                        if alarmPriority_dict[prefix+'.LL'][0] == "High":
+                            priority = "100"
+                        elif alarmPriority_dict[prefix+'.LL'][0] == "Medium":
+                            priority = "0"
+                        elif alarmPriority_dict[prefix+'.LL'][0] == "Low":
+                            priority = "110"
+                        else:
+                            priority = "0"
+                        tag_id = str(uuid.uuid4())
+                        ET.SubElement(
+                            tags,
+                            "Tag",
+                            ID=tag_id,
+                            Name=prefix + '.ALMPVLL',
+                            IsMaster="True",
+                            HysysVar="@@@@"+prefix+'.ALMPVLL',
+                            NumDecimals=str(getattr(t, "NumDecimals", "")),
+                            HysysVarUnit=str(getattr(t, "HysysVarUnit", "")),
+                            DefaultValue=str(getattr(t, "DefaultValue", "")))
+                        ET.SubElement(alarms, "Alarm",
+                                                ID=str(uuid.uuid4()),
+                                                Name=prefix + '.ALMPVLL',
+                                                Tag=tag_id,
+                                                Screen=id_,
+                                                Description=alarm_comment,
+                                                Threshold=str(0.5),
+                                                Priority=priority)
+                elif prefix + '.VL' == tag_name:
+                    if prefix + '.VEL-' in alarmPriority_dict:
+                        if alarmPriority_dict[prefix + '.VEL-'][0] == "High":
+                            priority = "100"
+                        elif alarmPriority_dict[prefix + '.VEL-'][0] == "Medium":
+                            priority = "0"
+                        elif alarmPriority_dict[prefix + '.VEL-'][0] == "Low":
+                            priority = "110"
+                        else:
+                            priority = "0"
+                        tag_id = str(uuid.uuid4())
+                        ET.SubElement(
+                            tags,
+                            "Tag",
+                            ID=tag_id,
+                            Name=prefix + '.ALMVELLO',
+                            IsMaster="True",
+                            HysysVar="@@@@" + prefix + '.ALMVELLO',
+                            NumDecimals=str(getattr(t, "NumDecimals", "")),
+                            HysysVarUnit=str(getattr(t, "HysysVarUnit", "")),
+                            DefaultValue=str(getattr(t, "DefaultValue", "")))
+                        ET.SubElement(alarms, "Alarm",
+                                      ID=str(uuid.uuid4()),
+                                      Name=prefix + '.ALMVELLO',
+                                      Tag=tag_id,
+                                      Description=alarm_comment,
+                                      Screen=str(id_),
+                                      Threshold=str(0.5),
+                                      Priority=priority)
+                    if prefix + '.VEL+' in alarmPriority_dict:
+                        if alarmPriority_dict[prefix + '.VEL+'][0] == "High":
+                            priority = "100"
+                        elif alarmPriority_dict[prefix + '.VEL+'][0] == "Medium":
+                            priority = "0"
+                        elif alarmPriority_dict[prefix + '.VEL+'][0] == "Low":
+                            priority = "110"
+                        else:
+                            priority = "0"
+                        tag_id = str(uuid.uuid4())
+                        ET.SubElement(
+                            tags,
+                            "Tag",
+                            ID=tag_id,
+                            Name=prefix + '.ALMVELHI',
+                            IsMaster="True",
+                            HysysVar="@@@@" + prefix + '.ALMVELHI',
+                            NumDecimals=str(getattr(t, "NumDecimals", "")),
+                            HysysVarUnit=str(getattr(t, "HysysVarUnit", "")),
+                            DefaultValue=str(getattr(t, "DefaultValue", "")))
+                        ET.SubElement(alarms, "Alarm",
+                                      ID=str(uuid.uuid4()),
+                                      Name=prefix + '.ALMVELHI',
+                                      Tag=tag_id,
+                                      Screen=str(id_),
+                                      Description=alarm_comment,
+                                      Threshold=str(0.5),
+                                      Priority=priority)
+
+                num_decimals = 0
+                high_value = '0'
+                low_value = '0'
+                if prefix in units and 'SH' in units[prefix]:
+                    num = units[prefix]['SH']
+                    high_value = (str(units[prefix]["SH"]))
+                    low_value = (str(units[prefix]["SL"]))
+                    if num:
+                        num_str = str(num)
+                        if '.' in num_str:
+                            num_decimals = len(num_str.split('.')[1])
+                        else:
+                            num_decimals = 2
+
+                if num_decimals > 3:
+                    num_decimals = 3
+                if high_value == "None" or low_value == "None":
+                    high_value = '0'
+                    low_value = '0'
                 ET.SubElement(
                     tags,
                     "Tag",
@@ -80,10 +283,11 @@ def writeTags(tag_list, tags, project_tree, tagName_list):
                     Name=tag_name,
                     IsMaster="True",
                     HysysVar=hysys_var,
-                    NumDecimals=str(getattr(t, "NumDecimals", "")),
+                    NumDecimals=str(num_decimals),
                     HysysVarUnit=str(getattr(t, "HysysVarUnit", "")),
-                    DefaultValue=str(getattr(t, "DefaultValue", ""))
-                )
+                    DefaultValue=str(getattr(t, "DefaultValue", "")),
+                    HighLimit=high_value,
+                    LowLimit=low_value)
                 # Agregar a la lista de nombres de tags
                 tagName_set.add(tag_name)
 
@@ -123,7 +327,7 @@ def initScreen(root, project, windows, project_tree, tags, name, tagName_list, u
     print("Starting...")
     # Define la estructura del árbol XML con los valores proporcionados
     window = ET.SubElement(windows, "Window")
-    size = writeWindow(root, window, name, window_dict)
+    size, id_ = writeWindow(root, window, name, window_dict)
     print("READ : ")
     tag_list, object_list, tuples = readRect_rec(root, 0, 0, "", "", False, tag_list, [], [], name, tuplas_report)
     object_list = orderByZIndex(object_list)
@@ -141,7 +345,7 @@ def initScreen(root, project, windows, project_tree, tags, name, tagName_list, u
     writeObjects(object_list, window, project_tree, size, tag_list, units, alarms, alarms_dict, window_dict,
                  alarmsPriority_dict)
     print("WRITE TAGS: ")
-    writeTags(tag_list, tags, project_tree, tagName_list)
+    writeTags(tag_list, tags, project_tree, tagName_list, alarms, units, alarmsPriority_dict, id_)
 
     """indent(project)"""
 
@@ -518,13 +722,13 @@ def writeObjects(object_list, window, project_tree, size, tag_list, units, alarm
         if shape_type in shape_name_map:
             #obj.ShapeName = f"{shape_name_map[shape_type]}{idx}"
             if shape_type == Rectangle:
-                writeRect(obj, window, project_tree, alarmPriority_dict)
+                writeRect(obj, window, project_tree, alarmPriority_dict, units)
             elif shape_type == Sector:
                 writeSector(obj, window, project_tree, alarmPriority_dict)
             elif shape_type == Arc:
                 writeArc(obj, window, project_tree, alarmPriority_dict)
             elif shape_type == Polygon:
-                writePolygon(obj, window, project_tree, alarmPriority_dict)
+                writePolygon(obj, window, project_tree, alarmPriority_dict, units)
             elif shape_type == Ellipse:
                 writeEllipse(obj, window, project_tree, alarmPriority_dict)
             elif shape_type == Line:
@@ -629,6 +833,7 @@ def writePolyLine(object, window, project_tree):
                                  TriggerTag="",
                                  TriggerValue="0")
 
+
     writeEndArrow(object, line_element)
     writeStartArrow(object, line_element)
 
@@ -658,8 +863,44 @@ def writeEllipse(object, window, project_tree, alarmPriority_dict):
     writeBinding(object, sector_element, project_tree)
 
 
-def writePolygon(object, window, project_tree, alarmPriority_dict):
-    writeShape(object, "Polygon", window, project_tree, alarmPriority_dict)
+def writePolygon(rect, window, project_tree, alarmPriority_dict, units):
+    polygon = writeShape(rect, "Polygon", window, project_tree, alarmPriority_dict)
+    if rect.DataLinkInfo != []:
+        if "Left" in rect.DataLinkInfo[0]['PropertyName']:
+            if '.' in rect.DataLinkInfo[0]['HighLimit']:
+                prefix = rect.DataLinkInfo[0]['HighLimit'].split('.')[0]
+                tag_ = rect.DataLinkInfo[0]['HighLimit'].split('.')[1]
+                highlimitX = units[prefix][tag_]
+                prefix = rect.DataLinkInfo[0]['LowLimit'].split('.')[0]
+                tag_ = rect.DataLinkInfo[0]['LowLimit'].split('.')[1]
+                lowlimitX = units[prefix][tag_]
+                polygon.set("HighLimitX", str(highlimitX))
+                polygon.set("LowLimitX", str(lowlimitX))
+            XFrom = float(rect.DataLinkInfo[0]['TransformFrom'])
+            XTo = rect.X + float(rect.DataLinkInfo[0]['TransformTo']) - XFrom
+            polygon.set("Offset", str(rect.DataLinkInfo[0]['OffSet']))
+            polygon.set("PropertyX", "true")
+            polygon.set("TransformToX", str(XTo))
+            polygon.set("TransformFromX", str(rect.X))
+            polygon.set("TagValueX", str(rect.DataLinkInfo[0]['Value']))
+        elif "Top" in rect.DataLinkInfo[0]['PropertyName']:
+            if '.' in rect.DataLinkInfo[0]['HighLimit']:
+                prefix = rect.DataLinkInfo[0]['HighLimit'].split('.')[0]
+                tag_ = rect.DataLinkInfo[0]['HighLimit'].split('.')[1]
+                highlimitY = units[prefix][tag_]
+                prefix = rect.DataLinkInfo[0]['LowLimit'].split('.')[0]
+                tag_ = rect.DataLinkInfo[0]['LowLimit'].split('.')[1]
+                lowlimitY = units[prefix][tag_]
+                polygon.set("HighLimitY", str(highlimitY))
+                polygon.set("LowLimitY", str(lowlimitY))
+            YFrom = float(rect.DataLinkInfo[0]['TransformFrom'])
+            YTo = rect.Y + float(rect.DataLinkInfo[0]['TransformTo']) - YFrom
+            polygon.set("Offset", str(rect.DataLinkInfo[0]['OffSet']))
+            polygon.set("PropertyY", "true")
+            polygon.set("TransformToY", str(YTo))
+            polygon.set("TransformFromY", str(rect.Y))
+            polygon.set("TagValueY", str(rect.DataLinkInfo[0]['Value']))
+
 
 
 def writePoints(object, element):
@@ -730,7 +971,7 @@ def write_level(object, window, project_tree, tag_list, units, alarmPriority_dic
                 type_scale = object.dataChar.Value.split('.')[-1]
                 if str(object.dataChar.Value) == tag.Name:
                     object.LevelTag = tag.ID
-                    print(tag.Name)
+                    #print(tag.Name)
                 """if str(object.binding_dic[bind]) != str(type_scale):
                     if str(object.binding_dic[bind]) + '.' + str(type_scale) == tag.Name:
                         object.LevelTag = tag.ID
@@ -741,7 +982,7 @@ def write_level(object, window, project_tree, tag_list, units, alarmPriority_dic
                         tag1.ID = uuid.uuid4()
                         object.LevelTag = tag1.ID
                         tag1.Name = str(object.binding_dic[bind]) + '.' + str(type_scale)
-                        print(tag1.Name + f"------X:{object.X}-----Y:{object.Y}")
+                        #print(tag1.Name + f"------X:{object.X}-----Y:{object.Y}")
                         tag1.HysysVar = "0@@100@@IIS.Saw" + str(tag1.Name)
                         if tag1.Name == "." + str(type_scale):
                             write = False
@@ -812,7 +1053,7 @@ def write_level(object, window, project_tree, tag_list, units, alarmPriority_dic
                     object.LevelValue2 = str(unit_info['MH'])
         else:
             object.LevelValue2 = object.binding_dic[object.LevelValue2]
-    print(object.LevelTag)
+    #print(object.LevelTag)
     level_element = ET.SubElement(window, "DynamicLevel",
                                   Fill=str(object.Fill),
                                   Stroke=str(object.Stroke),
@@ -1036,6 +1277,7 @@ def writeTextElement(text_obj, window, units, tag_list, alarms, project_tree, al
                         cond.Expression = str(lista[0].Name) + "==0,0"
                         tag_list.append(lista[0])
                         """alarms_dict[lista[1].Name] = lista[1]"""
+                        """alarms_dict[lista[1].Name] = lista[1]"""
                         bind.Value = bind.GenericName = lista[0].Name
             elif (str(bind.Value) + '<>"HI"') == cond.Expression:
                 lista = check_alarm(units, bind.Value, "HI", window.attrib["ID"])
@@ -1096,8 +1338,43 @@ def writeText(text, window, project_tree, units, tag_list, alarm_list, alarm_dic
         indent(text_element)
 
 
-def writeRect(rect, window, project_tree, alarmPriority_dict):
+def writeRect(rect, window, project_tree, alarmPriority_dict, units):
     rectangle = ET.SubElement(window, "DinamicRectangle")
+    if rect.DataLinkInfo != []:
+        if "Left" in rect.DataLinkInfo[0]['PropertyName']:
+            if '.' in rect.DataLinkInfo[0]['HighLimit']:
+                prefix = rect.DataLinkInfo[0]['HighLimit'].split('.')[0]
+                tag_ = rect.DataLinkInfo[0]['HighLimit'].split('.')[1]
+                highlimitX = units[prefix][tag_]
+                prefix = rect.DataLinkInfo[0]['LowLimit'].split('.')[0]
+                tag_ = rect.DataLinkInfo[0]['LowLimit'].split('.')[1]
+                lowlimitX = units[prefix][tag_]
+                rectangle.set("HighLimitX", str(highlimitX))
+                rectangle.set("LowLimitX", str(lowlimitX))
+            XFrom = float(rect.DataLinkInfo[0]['TransformFrom'])
+            XTo = rect.X + float(rect.DataLinkInfo[0]['TransformTo']) - XFrom
+            rectangle.set("Offset", str(rect.DataLinkInfo[0]['OffSet']))
+            rectangle.set("PropertyX", "true")
+            rectangle.set("TransformToX", str(XTo))
+            rectangle.set("TransformFromX", str(rect.X))
+            rectangle.set("TagValueX", str(rect.DataLinkInfo[0]['Value']))
+        elif "Top" in rect.DataLinkInfo[0]['PropertyName']:
+            if '.' in rect.DataLinkInfo[0]['HighLimit']:
+                prefix = rect.DataLinkInfo[0]['HighLimit'].split('.')[0]
+                tag_ = rect.DataLinkInfo[0]['HighLimit'].split('.')[1]
+                highlimitY = units[prefix][tag_]
+                prefix = rect.DataLinkInfo[0]['LowLimit'].split('.')[0]
+                tag_ = rect.DataLinkInfo[0]['LowLimit'].split('.')[1]
+                lowlimitY = units[prefix][tag_]
+                rectangle.set("HighLimitY", str(highlimitY))
+                rectangle.set("LowLimitY", str(lowlimitY))
+            YFrom = float(rect.DataLinkInfo[0]['TransformFrom'])
+            YTo = rect.Y + float(rect.DataLinkInfo[0]['TransformTo']) - YFrom
+            rectangle.set("Offset", str(rect.DataLinkInfo[0]['OffSet']))
+            rectangle.set("PropertyY", "true")
+            rectangle.set("TransformToY", str(YTo))
+            rectangle.set("TransformFromY", str(rect.Y))
+            rectangle.set("TagValueY", str(rect.DataLinkInfo[0]['Value']))
     writeShapeAttributes(rectangle, rect)
     indent(rectangle)
     writeCondition(rect, rectangle, project_tree, alarmPriority_dict)
@@ -1162,7 +1439,7 @@ def writeWindow(root, window, name, window_dict):
     window.set("AllowResizing", "True")
     indent(window)
 
-    return size
+    return size, id_screen
 
 
 def writeBinding(rect, rect_label, project_tree):
@@ -1524,7 +1801,7 @@ def faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags,
         ("lb_4", str(puntos[1]), "612.864"),
         ("lb_5", str(puntos[0]), "675"),
     ]
-    print(prefix_tag)
+    #print(prefix_tag)
     for shape_name, content, y_pos in labels:
         ET.SubElement(window, "LabelText",
                       Width="29.6",

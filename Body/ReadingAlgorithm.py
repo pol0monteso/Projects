@@ -665,8 +665,25 @@ def initRectangles(child, l, t, ro, aux, render_list, name, tuplas_report):
     rect1 = Rectangle.default()
     attrib = child.attrib
     set_common_attributes(rect1, child, ro, l, t, aux, render_list, name, tuplas_report)
-    if "Fill" in child.attrib and "Null" not in child.attrib["Fill"]:
-        fill = attrib.get("Fill", "")
+
+    # Recolectar los bindings: { "$TAG": "65FC2", "$XYZ": "value", ... }
+    bindings = {}
+    for binding in child.findall(".//{*}GNBinding"):
+        generic_name = binding.attrib.get("GenericName")
+        value = binding.attrib.get("Value")
+        if generic_name and value:
+            bindings[generic_name] = value
+
+    # Función para reemplazar placeholders en un string
+    def replace_placeholders(s):
+        for key, val in bindings.items():
+            s = s.replace(key, val)
+        return s
+
+    # Set Fill color
+    fill_attr = attrib.get("Fill", "")
+    if "Fill" in attrib and "Null" not in fill_attr:
+        fill = replace_placeholders(fill_attr)
         rect1.Fill = parse_fill(fill) if 'Gradient' in fill else fill
     else:
         rect1.Fill = "#00FF0000"
@@ -675,6 +692,37 @@ def initRectangles(child, l, t, ro, aux, render_list, name, tuplas_report):
 
     process_conditions(rect1, child)
     process_bindings(rect1, child)
+
+    # Extraer AdvanceDataLink con valores reales sustituidos
+    rect1.DataLinkInfo = []
+    for dl_modifiers in child.findall(".//{*}DataLinkModifier"):
+        for data_link in dl_modifiers.findall(".//{*}AdvanceDataLink"):
+            info = {
+                "HighLimit": replace_placeholders(data_link.attrib.get("HighLimit", "")),
+                "LowLimit": replace_placeholders(data_link.attrib.get("LowLimit", "")),
+                "PropertyName": replace_placeholders(data_link.attrib.get("PropertyName", "")),
+                "Value": replace_placeholders(data_link.attrib.get("Value", "")),
+                "TransformFrom": None,
+                "TransformTo": None,
+                "OffSet": None  # <--- Añadido
+            }
+
+            # TransformFrom
+            tf = data_link.find(".//{*}AdvanceDataLink.TransformFrom/{*}Double")
+            if tf is not None:
+                info["TransformFrom"] = float(tf.text)
+
+            # TransformTo
+            tt = data_link.find(".//{*}AdvanceDataLink.TransformTo/{*}Double")
+            if tt is not None:
+                info["TransformTo"] = float(tt.text)
+
+            # OffSet <--- Nuevo
+            offset = data_link.find(".//{*}AdvanceDataLink.OffSet/{*}Double")
+            if offset is not None:
+                info["OffSet"] = float(offset.text)
+
+            rect1.DataLinkInfo.append(info)
 
     return rect1
 
@@ -1367,10 +1415,58 @@ def initFillArea(child, l, t, ro, aux, render_list, name, tuplas_report):
         poly1.Width = max(x for x, y in points)
         poly1.Height = max(y for x, y in points)
         poly1.Points.extend(XPoint(x, y) for x, y in points)
-
+    attrib = child.attrib
     set_common_attributes(poly1, child, ro, l, t, aux, render_list, name, tuplas_report)
     process_conditions(poly1, child)
     process_bindings(poly1, child)
+    poly1.DataLinkInfo = []
+    # Recolectar los bindings: { "$TAG": "65FC2", "$XYZ": "value", ... }
+    bindings = {}
+    for binding in child.findall(".//{*}GNBinding"):
+        generic_name = binding.attrib.get("GenericName")
+        value = binding.attrib.get("Value")
+        if generic_name and value:
+            bindings[generic_name] = value
+    def replace_placeholders(s):
+        for key, val in bindings.items():
+            s = s.replace(key, val)
+        return s
+
+    # Set Fill color
+    fill_attr = attrib.get("Fill", "")
+    if "Fill" in attrib and "Null" not in fill_attr:
+        fill = replace_placeholders(fill_attr)
+        poly1.Fill = parse_fill(fill) if 'Gradient' in fill else fill
+    else:
+        poly1.Fill = "#00FF0000"
+    for dl_modifiers in child.findall(".//{*}DataLinkModifier"):
+        for data_link in dl_modifiers.findall(".//{*}AdvanceDataLink"):
+            info = {
+                "HighLimit": replace_placeholders(data_link.attrib.get("HighLimit", "")),
+                "LowLimit": replace_placeholders(data_link.attrib.get("LowLimit", "")),
+                "PropertyName": replace_placeholders(data_link.attrib.get("PropertyName", "")),
+                "Value": replace_placeholders(data_link.attrib.get("Value", "")),
+                "TransformFrom": None,
+                "TransformTo": None,
+                "OffSet": None  # <--- Añadido
+            }
+
+            # TransformFrom
+            tf = data_link.find(".//{*}AdvanceDataLink.TransformFrom/{*}Double")
+            if tf is not None:
+                info["TransformFrom"] = float(tf.text)
+
+            # TransformTo
+            tt = data_link.find(".//{*}AdvanceDataLink.TransformTo/{*}Double")
+            if tt is not None:
+                info["TransformTo"] = float(tt.text)
+
+            # OffSet <--- Nuevo
+            offset = data_link.find(".//{*}AdvanceDataLink.OffSet/{*}Double")
+            if offset is not None:
+                info["OffSet"] = float(offset.text)
+
+            poly1.DataLinkInfo.append(info)
     return poly1
 
 

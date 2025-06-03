@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from Body.Faceplate import faceplate_pid, _faceplate_pvi
+from Body.Faceplate import faceplate_pid, _faceplate_pvi, faceplate_template
 from Body.ReadingAlgorithm import *
 from tkinter import ttk
 import tkinter as tk
@@ -16,7 +16,7 @@ from datetime import datetime
 from testCase import build_project_xml
 
 
-def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_string):
+def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_string, template_directory):
     filter_string.strip()
     filter_list = filter_string.split(":")
     tags, alarms, curves, trends, maps, windows, project_tree, project = build_project_xml()
@@ -26,7 +26,7 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
     alarm_dict = {}
     units = load_units(database_path)
     cascade_dict = load_connect_mapping(database_path)
-
+    template_dict = check_template(template_directory)
     #xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
     xlsx_data = generate_csv_data(tuning_params)
     # units = {key: {**units[key], **xlsx_data[key]} for key in units if key in xlsx_data}
@@ -135,9 +135,12 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
                 prefix_tag = touch.Faceplate
                 if "Block" in units[prefix_tag]:
                     if units[prefix_tag]["Block"] == "PVI":
-                        _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list)
+                        _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, alarms)
                     elif units[prefix_tag]["Block"] == "PID":
-                        faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict)
+                        faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms)
+                    for key, item in template_dict.items():
+                        if units[prefix_tag]["Block"] == key:
+                            faceplate_template(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms, item)
     for button in button_list:
         if button.FunctionType == "callWindow":
             if button.Screen in window_dict.keys():
@@ -240,8 +243,8 @@ test_emulation(
     r"C:\BAPCO",
     r"\\192.168.1.243\DCSsupport\Yokogawa\ConversionIIS\1.PROJECTS\220124_BAPCO_OTSReplacement_LFSO_Complex\2.TUNINGPARAMETERS",
     r"\\192.168.1.243\DCSsupport\Yokogawa\ConversionIIS\1.PROJECTS\220124_BAPCO_OTSReplacement_LFSO_Complex\3.FCS&SCS DB",
-    ""
-)#xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
+    "",
+    r"C:\Users\pol.monteso\OneDrive - Inprocess Technology and consulting group, S.L\Desktop\Template")#xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
 """test_emulation(
     r'C:\Emulation\HMIscreensYOKOGAWA\Source\CAMSAlm-CENTUM.csv',
     r"C:\Emulation\HMIscreensYOKOGAWA",

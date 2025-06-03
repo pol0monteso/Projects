@@ -61,14 +61,13 @@ def leer_y_modificar_csv(archivo_csv):
             clave = fila[0]  # Columna 1 (clave)
             valor_col_6 = fila[6] if fila[6] else None  # Columna 6
             valor_col_8 = fila[8] if fila[8] else None  # Columna 8
+            valor_col_4 = fila[4] if fila[4] else None  # Columna 8
 
-            # Verificar que la clave no sea None
             if clave:
                 clave_str = str(clave)  # Convertir la clave a cadena
 
-                # Verificar si la clave contiene .HH, .HI, .LL, .LO
-                if any(sufijo in clave_str for sufijo in ['.HH', '.HI', '.LL', '.LO']):
-                    diccionario[clave_str] = (valor_col_6, valor_col_8)
+                if any(sufijo in clave_str for sufijo in ['.HH', '.HI', '.LL', '.LO', 'VEL+', 'VEL-']):
+                    diccionario[clave_str] = (valor_col_6, valor_col_8, valor_col_4)
 
     return diccionario
 

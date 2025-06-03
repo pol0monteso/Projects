@@ -1,7 +1,8 @@
 import re
 import numpy as np
 from Classes.ClassControls import *
-
+import os
+import xml.etree.ElementTree as ET
 
 def indent(elem, level=0):
     i = "\n" + level * "    "
@@ -571,6 +572,29 @@ def FlipRotationMode2(value):
         "RL+": lambda: (float(l) - float(ct), float(t) + float(cl)),
         "RL": lambda: (float(l) + float(cl), float(t) + float(ct))"""
 
+
+def check_template(path):
+    result = {}
+
+    # Recorremos el contenido del directorio principal
+    for item in os.listdir(path):
+        full_path = os.path.join(path, item)
+
+        # Solo nos interesan las carpetas
+        if os.path.isdir(full_path):
+            # Buscar un archivo XML dentro de esa subcarpeta
+            for file in os.listdir(full_path):
+                if file.lower().endswith('.xml'):
+                    xml_path = os.path.join(full_path, file)
+                    try:
+                        tree = ET.parse(xml_path)
+                        root = tree.getroot()
+                        result[item] = root  # Guardamos el nodo raíz del XML
+                    except ET.ParseError:
+                        print(f"Error al parsear el XML: {xml_path}")
+                        result[item] = None  # Puedes manejar errores según tu necesidad
+                    break  # Asumimos que solo hay un XML por carpeta
+    return result
 
 def check_alarm(units, tag, alarm, screen):
     # Verificar si el tag está en las unidades

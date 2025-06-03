@@ -58,6 +58,14 @@ def initialize_application():
             hierarchy_file_entry.delete(0, tk.END)
             hierarchy_file_entry.insert(0, file)
 
+    def select_template_file():
+        folder = filedialog.askdirectory(
+            title="Select Folder with Tuning Parameters CSV Files"
+        )
+        if folder:
+            template_file_entry.delete(0, tk.END)
+            template_file_entry.insert(0, folder)
+
     def check_files_and_generate():
         done_event = threading.Event()
         alarms_file = alarms_file_entry.get()
@@ -65,6 +73,7 @@ def initialize_application():
         windows_directory = windows_folder_entry.get()
         database_path = database_folder_entry.get()
         filter_value = starts_entry.get()
+        template_directory = template_file_entry.get()
 
         if not filter_value:
             filter_value = None
@@ -75,8 +84,9 @@ def initialize_application():
         print("Starting translation process...")
         generate_button.grid_remove()
         emulation_thread = threading.Thread(target=test_emulation, args=(
-        alarms_file, windows_directory, tuning_params, database_path, filter_value))
+        alarms_file, windows_directory, tuning_params, database_path, filter_value, template_directory))
         emulation_thread.start()
+
 #alarm_dir, directorio, tuning_params, database_path, filter_string
     def select_alarms_file():
         file = filedialog.askopenfilename(
@@ -156,11 +166,21 @@ def initialize_application():
     hierarchy_file_entry.grid(row=6, column=1, padx=10, pady=10, sticky="ew")
     ttk.Button(root, text="Select File", command=select_hierarchy_file).grid(row=6, column=2, padx=5, pady=5)
 
+
+    ttk.Label(root, text="Faceplate Template", background="Lightgray", font=("Arial", 10, "bold")).grid(row=7,
+                                                                                                                  column=0,
+                                                                                                                  padx=5,
+                                                                                                                  pady=5)
+    global template_file_entry
+    template_file_entry = ttk.Entry(root, width=30)
+    template_file_entry.grid(row=7, column=1, padx=10, pady=10, sticky="ew")
+    ttk.Button(root, text="Select File", command=select_template_file).grid(row=7, column=2, padx=5, pady=5)
+
     # Generate Button
     generate_button = ttk.Button(root, text="Generate .iis Project", width=30, command=check_files_and_generate)
-    generate_button.grid(row=7, column=0, columnspan=3, padx=5, pady=5)
+    generate_button.grid(row=8, column=0, columnspan=3, padx=5, pady=5)
 
-    tk.Label(root, text="DEMO ---- testing version", font=("Arial", 8, "bold", "italic")).grid(row=7, column=0, padx=5,
+    tk.Label(root, text="DEMO ---- testing version", font=("Arial", 8, "bold", "italic")).grid(row=8, column=0, padx=5,
                                                                                                pady=5, sticky="ws")
 
     def on_close():

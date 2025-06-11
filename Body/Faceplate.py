@@ -8,6 +8,8 @@ from Classes.ClassControls import Tag
 import uuid
 from decimal import Decimal, ROUND_HALF_UP
 
+from Utils.TuningFiles import add_chart, add_tag_hystoric
+
 """def find_faceplate_tags(tag_list, prefix_tag, units):
     tag_Mode = None
     tag_ALRM = None
@@ -391,7 +393,7 @@ def find_PVI_faceplate_tags(tag_list, prefix_tag, units):
 
     return [tag_Mode, tag_ALRM, tag_AFLS, tag_AOFS, tag__PV, tag_HH, tag_PH, tag_PL, tag_LL, tag_PV, tag_VL]
 
-def faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms):
+def faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms, plotmanager, tags_hys, tuning_tag_list):
     new_tag = find_faceplate_tags(tag_list, prefix_tag, units)
 
     # Obtener los colores de alarmas
@@ -1234,12 +1236,20 @@ def faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags,
         tuningComment = comment.replace("\n", ' ')
     else:
         tuningComment = comment
+    plotID = uuid.uuid4()
+    tuning_list = [tag_PV, tag_MV, tag_SV]
+    if tag_PV not in tuning_tag_list:
+        tuning_tag_list.append(tag_PV)
+        add_tag_hystoric(tags_hys, tuning_list)
+    add_chart(plotmanager, tuning_list, prefix_tag, str(plotID), "")
+
     ET.SubElement(window, "TuningWindow",
                   ShapeName="tuning_window",
                   X="81",
                   Y="121",
                   Width="55.9999999999998",
                   Height="24.8",
+                  PlotID=str(plotID),
                   TagName=prefix_tag,
                   TagBlock="PID",
                   TagMode=f"{prefix_tag}.MODE",
@@ -1278,7 +1288,9 @@ def faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags,
                   LLColor=ll_color
                   )
 
-def _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, alarms):
+    return tuning_tag_list
+
+def _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, alarms, plotmanager, tags_hys, tag_tuning_list):
     new_tag = find_PVI_faceplate_tags(tag_list, prefix_tag, units)
 
     hh_color = str(alarmsPriority_dict.get(f"{prefix_tag}.HH", [None, None])[1])
@@ -1626,10 +1638,17 @@ def _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags
         tuningComment = comment.replace("\n", ' ')
     else:
         tuningComment = comment
+    tuning_list = [tag_PV]
+    plotID = uuid.uuid4()
+    if tag_PV not in tag_tuning_list:
+        tag_tuning_list.append(tag_PV)
+        add_tag_hystoric(tags_hys, tuning_list)
+    add_chart(plotmanager, tuning_list, prefix_tag, str(plotID), "")
     ET.SubElement(window, "TuningWindow",
                   ShapeName="tuning_window",
                   X="81",
                   Y="121",
+                  PlotID=str(plotID),
                   Width="55.9999999999998",
                   Height="24.8",
                   TagName=prefix_tag,

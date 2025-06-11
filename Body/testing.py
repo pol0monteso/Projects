@@ -10,6 +10,8 @@ import csv
 from Connection.Filtre import *
 from Body.ReadWriteXML import initScreen, faceplate_pvi
 import xml.etree.ElementTree as ET
+
+from Utils.TuningFiles import build_tuning_window, build_hystoric_window
 from Utils.Utils import indent
 from datetime import datetime
 
@@ -17,6 +19,9 @@ from testCase import build_project_xml
 
 
 def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_string, template_directory):
+    tag_tuning_list = []
+    plotmanager, root = build_tuning_window()
+    hystoric, tags_hys = build_hystoric_window()
     filter_string.strip()
     filter_list = filter_string.split(":")
     tags, alarms, curves, trends, maps, windows, project_tree, project = build_project_xml()
@@ -135,9 +140,9 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
                 prefix_tag = touch.Faceplate
                 if "Block" in units[prefix_tag]:
                     if units[prefix_tag]["Block"] == "PVI":
-                        _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, alarms)
+                        _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, alarms, plotmanager, tags_hys, tag_tuning_list)
                     elif units[prefix_tag]["Block"] == "PID":
-                        faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms)
+                        tag_tuning_list = faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms, plotmanager, tags_hys, tag_tuning_list)
                     for key, item in template_dict.items():
                         if units[prefix_tag]["Block"] == key:
                             faceplate_template(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms, item)
@@ -234,8 +239,28 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
         # Escribir todas las tuplas de datos
         escritor.writerows(tuples)"""
 
+    config = ET.SubElement(plotmanager, "Configuration", {
+        "ServerAddress": "http://localhost:8086",
+        "Database": "DBdemo1",
+        "Table": "DBdemo1",
+        "QueryInterval": "1000",
+        "LastValueIndex": "1",
+        "UserName": "ISInflux",
+        "Password": "Inprocess.100",
+        "xmlns": "http://schemas.datacontract.org/2004/07/ISChartEngine"
+    })
     project_tree.write("project.xml", encoding="utf-8", xml_declaration=True)
     os.system(f"start notepad++ project.xml")
+    tree = ET.ElementTree(root)
+    ET.indent(tree, space="  ", level=0)
+    tree.write("pmanager.cfg", encoding="utf-8", xml_declaration=True)
+    os.system(f"start notepad++ pmanager.cfg")
+    tree = ET.ElementTree(hystoric)
+    ET.indent(tree, space="  ", level=0)
+
+    tree.write("C:\BAPCO\project.xml", encoding="utf-8", xml_declaration=True)
+    os.system(f"start notepad++ C:\BAPCO\project.xml")
+
 
 
 test_emulation(

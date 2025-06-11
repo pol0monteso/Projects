@@ -55,7 +55,7 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
     for archivo in os.listdir(directorio):
         if filter_list and "Ex" not in filter_list[0]:
             #if (archivo.startswith(tuple(filter_list))) and archivo.endswith('.xaml'):
-            if (archivo.startswith("PRO-")) and archivo.endswith('.xaml'):
+            if (archivo.startswith("PRO-001")) and archivo.endswith('.xaml'):
                 point = archivo.find('.')
                 ruta_archivo = os.path.join(directorio, archivo)
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')

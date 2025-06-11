@@ -58,7 +58,7 @@ def writeTags(tag_list, tags, project_tree, tagName_list, alarms, units, alarmPr
 
     # Criterios de coincidencia de nombres de tag
     primary_conditions = [".PV", ".MV", "SCALE", ".#PV", ".ALRM", ".MODE", ".CMOD", ".OMOD", ".", ".SH", ".SL", ".HH",
-                          ".LL"]
+                          ".LL", ".SHDN"]
     secondary_conditions = [".ALMPV"]
     alarm_list = []
     if tag_list:
@@ -839,7 +839,8 @@ def writePolyLine(object, window, project_tree):
 
     writeEndArrow(object, line_element)
     writeStartArrow(object, line_element)
-
+    writeCondition(object, line_element, project_tree, [])
+    writeBinding(object, line_element, project_tree)
     writeBindablePoints(object, line_element)
     ET.SubElement(line_element, "ShapeLayoutProperty",
                   Stroke=str(object.Stroke),

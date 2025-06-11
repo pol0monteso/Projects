@@ -515,7 +515,7 @@ class Arrow:
 
     @classmethod
     def default(cls):
-        return cls(Width=20, Height=20, X=0, Y=0, ShapeName="Rectarrow", Fill="White", Stroke="Black",
+        return cls(Width=20, Height=20, X=0, Y=0, ShapeName="arrow", Fill="White", Stroke="Black",
                    StrokeThickness=1, Name="", Tag=-1, RenderTransform="", RenderTransformOrigin="",
                    IISCondition=[], Binding=[], Points=[], Rotation=0, ArrowEnd=False, ArrowStart=False, isVisible=False,
                    ZIndex=0, ZIndexGroup=0)

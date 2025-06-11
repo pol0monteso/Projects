@@ -47,8 +47,24 @@ def load_units(path):
         conn.close()
 
     # Leer la tabla UnitTbl del archivo PjtRef.mdb
-    pjt_ref_file = 'PjtRef.accdb'
+    """pjt_ref_file = 'PjtRef.accdb'
     #pjt_ref_file = 'PjtRef.mdb'
+    pjt_ref_path = os.path.join(path, pjt_ref_file)
+    conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + pjt_ref_path
+    conn = pyodbc.connect(conn_str)
+    cursor = conn.cursor()"""
+    accdb_file = 'PjtRef.accdb'
+    mdb_file = 'PjtRef.mdb'
+
+    # Verificar cuál archivo existe
+    if os.path.exists(os.path.join(path, accdb_file)):
+        pjt_ref_file = accdb_file
+    elif os.path.exists(os.path.join(path, mdb_file)):
+        pjt_ref_file = mdb_file
+    else:
+        raise FileNotFoundError("No se encontró ni 'PjtRef.accdb' ni 'PjtRef.mdb'.")
+
+    # Crear la conexión
     pjt_ref_path = os.path.join(path, pjt_ref_file)
     conn_str = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + pjt_ref_path
     conn = pyodbc.connect(conn_str)

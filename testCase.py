@@ -20,7 +20,17 @@ def build_project_xml():
     project = ET.Element("Project")
     project_type = ET.SubElement(project, "ProjectType", Value="0")
     project_version = ET.SubElement(project, "ProjectVersion", Value="3.6.4.0 [master-57b7df6f]")
+
     sections_params = ET.SubElement(project, "SectionsParams")
+    params_dll = ET.SubElement(sections_params, "Params", Section="DLL")
+    ET.SubElement(params_dll, "Param", Name="Folder", Description="Folder", Value="OPCServerUAfx", Type="File")
+    ET.SubElement(params_dll, "Param", Name="Name", Description="Name", Value="OpcServerUAfx", Type="Data")
+    ET.SubElement(params_dll, "Param", Name="Version", Description="Version", Value="4.0.2.0", Type="Data")
+    params_dll_params = ET.SubElement(sections_params, "Params", Section="DLL Parameters")
+    ET.SubElement(params_dll_params, "Param", Name="OPCServerName", Description="Server name",
+                  Value="opc.tcp://localhost:62886/IIS/OPCUA", Type="Data")
+    params_interface = ET.SubElement(sections_params, "Params", Section="InterfaceType")
+    ET.SubElement(params_interface, "Param", Name="Type", Description="CommDA", Value="DA", Type="Data")
     globals_elem = ET.SubElement(project, "Globals")
     global_elem = ET.SubElement(globals_elem, "Global", CasePath="C:\\", ConnectionType="70", CaseName="",
                                 SimulationDataTableName="", HysysVisible="False", RefreshTimeValues="1000",

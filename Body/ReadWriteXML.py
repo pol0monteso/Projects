@@ -49,7 +49,10 @@ def writeTags(tag_list, tags, project_tree, tagName_list, alarms, units, alarmPr
     - project_tree: Parámetro no usado, puede ser útil para futuras mejoras.
     - tagName_list: Lista de nombres de tags ya procesados.
     """
-
+    if id_ == "None" or id_ is None:
+        id_=""
+    else:
+        id_=str(id_)
     # Convertimos tagName_list en un conjunto para acceso O(1)
     tagName_set = set(tagName_list)
 
@@ -111,7 +114,7 @@ def writeTags(tag_list, tags, project_tree, tagName_list, alarms, units, alarmPr
                                                     Name=prefix + '.ALMPVHH',
                                                     Tag=tag_id,
                                                     Description=alarm_comment,
-                                                    Screen=id_,
+                                                    Screen=str(id_),
                                                     Threshold=str(0.5),
                                                     Priority=priority)
                     elif prefix + '.HI' in alarmPriority_dict:
@@ -138,7 +141,7 @@ def writeTags(tag_list, tags, project_tree, tagName_list, alarms, units, alarmPr
                                                 ID=str(uuid.uuid4()),
                                                 Name=prefix + '.ALMPVHI',
                                                 Tag=tag_id,
-                                                Screen=id_,
+                                                Screen=str(id_),
                                                 Description=alarm_comment,
                                                 Threshold=str(0.5),
                                                 Priority=priority)
@@ -167,7 +170,7 @@ def writeTags(tag_list, tags, project_tree, tagName_list, alarms, units, alarmPr
                                                 ID=str(uuid.uuid4()),
                                                 Name=prefix + '.ALMPVLO',
                                                 Tag=tag_id,
-                                                Screen=id_,
+                                                Screen=str(id_),
                                                 Description=alarm_comment,
                                                 Threshold=str(0.5),
                                                 Priority=priority)

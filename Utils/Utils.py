@@ -574,6 +574,8 @@ def FlipRotationMode2(value):
 
 
 def check_template(path):
+    if path == "":
+        return {}
     result = {}
 
     # Recorremos el contenido del directorio principal

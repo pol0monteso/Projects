@@ -54,8 +54,8 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
         total = len(os.listdir(directorio))
     for archivo in os.listdir(directorio):
         if filter_list and "Ex" not in filter_list[0]:
-            if (archivo.startswith(tuple(filter_list))) and archivo.endswith('.xaml'):
-            #if (archivo.startswith("PRO-0")) and archivo.endswith('.xaml'):
+            #if (archivo.startswith(tuple(filter_list))) and archivo.endswith('.xaml'):
+            if (archivo.startswith("PRO-")) and archivo.endswith('.xaml'):
                 point = archivo.find('.')
                 ruta_archivo = os.path.join(directorio, archivo)
                 timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
@@ -143,9 +143,10 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
                         _faceplate_pvi(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, alarms, plotmanager, tags_hys, tag_tuning_list)
                     elif units[prefix_tag]["Block"] == "PID":
                         tag_tuning_list = faceplate_pid(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms, plotmanager, tags_hys, tag_tuning_list)
-                    for key, item in template_dict.items():
-                        if units[prefix_tag]["Block"] == key:
-                            faceplate_template(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms, item)
+                    if template_dict != {}:
+                        for key, item in template_dict.items():
+                            if units[prefix_tag]["Block"] == key:
+                                faceplate_template(tag_list, prefix_tag, alarmsPriority_dict, units, touch, tags, tagName_list, cascade_dict, alarms, item)
     for button in button_list:
         if button.FunctionType == "callWindow":
             if button.Screen in window_dict.keys():
@@ -262,18 +263,11 @@ def test_emulation(alarm_dir, directorio, tuning_params, database_path, filter_s
     os.system(f"start notepad++ C:\BAPCO\project.xml")
 
 
-
 test_emulation(
-    r"\\192.168.1.243\DCSsupport\Yokogawa\ConversionIIS\1.PROJECTS\220124_BAPCO_OTSReplacement_LFSO_Complex\4.ALARMS\CAMSAlm-CENTUM.csv",
-    r"C:\BAPCO",
-    r"\\192.168.1.243\DCSsupport\Yokogawa\ConversionIIS\1.PROJECTS\220124_BAPCO_OTSReplacement_LFSO_Complex\2.TUNINGPARAMETERS",
-    r"\\192.168.1.243\DCSsupport\Yokogawa\ConversionIIS\1.PROJECTS\220124_BAPCO_OTSReplacement_LFSO_Complex\3.FCS&SCS DB",
-    "",
-    r"C:\Users\pol.monteso\OneDrive - Inprocess Technology and consulting group, S.L\Desktop\Template")#xlsx_directory = r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters'
-"""test_emulation(
     r'C:\Emulation\HMIscreensYOKOGAWA\Source\CAMSAlm-CENTUM.csv',
     r"C:\Emulation\HMIscreensYOKOGAWA",
     r'C:\Emulation\HMIscreensYOKOGAWA\Source\TuningParameters',
     r'C:\Emulation\HMIscreensYOKOGAWA\Source',
+    "",
     ""
-)"""
+)
